@@ -10,7 +10,7 @@ import net.nussi.dedicated_applied_energistics.blockentities.InterDimensionalInt
 import net.nussi.dedicated_applied_energistics.init.BlockEntityTypeInit;
 import org.jetbrains.annotations.Nullable;
 
-public class InterDimensionalInterfaceBlock  extends Block implements EntityBlock {
+public class InterDimensionalInterfaceBlock extends Block implements EntityBlock {
 
     InterDimensionalInterfaceBlockEntity blockEntity;
 

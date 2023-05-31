@@ -12,8 +12,8 @@ import static net.nussi.dedicated_applied_energistics.DedicatedAppliedEnegistics
 public class BlockEntityTypeInit {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITY_TYPES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, MODID);
 
-    public static final RegistryObject<BlockEntityType<TestBlockEntity>> TEST_BLOCK_ENTITY_TYPE = BLOCK_ENTITY_TYPES.register("test_block", () -> BlockEntityType.Builder.of(TestBlockEntity::new, BlockInit.TEST_BLOCK.get()).build(null));
-
     public static final RegistryObject<BlockEntityType<InterDimensionalInterfaceBlockEntity>> INTER_DIMENSIONAL_INTERFACE_ENTITY_TYPE = BLOCK_ENTITY_TYPES.register("inter_dimensional_interface", () -> BlockEntityType.Builder.of(InterDimensionalInterfaceBlockEntity::new, BlockInit.INTER_DIMENSIONAL_INTERFACE_BLOCK.get()).build(null));
+
+    public static final RegistryObject<BlockEntityType<TestBlockEntity>> TEST_ENTITY_TYPE = BLOCK_ENTITY_TYPES.register("test_block", () -> BlockEntityType.Builder.of(TestBlockEntity::new, BlockInit.TEST_BLOCK.get()).build(null));
 
 }

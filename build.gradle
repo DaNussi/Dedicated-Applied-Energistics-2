@@ -129,9 +129,9 @@ repositories {
     // ForgeGradle automatically adds the Forge maven and Maven Central for you
 
     // If you have mod jar dependencies in ./libs, you can declare them as a repository like so:
-     flatDir {
-         dir 'libs'
-     }
+//     flatDir {
+//         dir 'libs'
+//     }
 
 
 
@@ -163,17 +163,36 @@ dependencies {
 
 
     // JEI
-    compileOnly(fg.deobf("mezz.jei:jei-${mc_version}-common-api:${jei_version}"))
-    compileOnly(fg.deobf("mezz.jei:jei-${mc_version}-forge-api:${jei_version}"))
-    runtimeOnly(fg.deobf("mezz.jei:jei-${mc_version}-forge:${jei_version}"))
+//    compileOnly(fg.deobf("mezz.jei:jei-${mc_version}-common-api:${jei_version}"))
+//    compileOnly(fg.deobf("mezz.jei:jei-${mc_version}-forge-api:${jei_version}"))
+//    runtimeOnly(fg.deobf("mezz.jei:jei-${mc_version}-forge:${jei_version}"))
 
 
 
     // AE2
 //    implementation files('libs/appliedenergistics2-forge-12.9.5-api.jar')
-    compileOnly(fg.deobf("appeng:appliedenergistics2-forge:12.9.4:api"))
-//    compileOnly(fg.deobf("appeng:appliedenergistics2-forge:12.9.4"))
-    runtimeOnly(fg.deobf("appeng:appliedenergistics2-forge:12.9.4"))
+    implementation(fg.deobf("appeng:appliedenergistics2-forge:12.9.4:api"))
+    implementation(fg.deobf("appeng:appliedenergistics2-forge:12.9.4"))
+
+    // REDIS DB
+    minecraftLibrary  'redis.clients:jedis:3.6.0'
+    minecraftLibrary  'org.apache.commons:commons-pool2:2.11.1'
+
+
+    /*
+
+		<dependency>
+			<groupId>redis.clients</groupId>
+			<artifactId>jedis</artifactId>
+			<version>4.3.1</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-pool2</artifactId>
+			<version>2.11.1</version>
+		</dependency>
+     */
 
     // For more info...
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html

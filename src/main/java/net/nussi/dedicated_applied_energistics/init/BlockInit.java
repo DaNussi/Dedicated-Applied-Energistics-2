@@ -1,7 +1,6 @@
 package net.nussi.dedicated_applied_energistics.init;
 
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -20,18 +19,15 @@ public class BlockInit {
 
     // ========================================================== //
 
-    public static final RegistryObject<Block> TEST_BLOCK = registerBlock("test_block",
-            new TestBlock(BlockBehaviour.Properties.of(Material.STONE)),
-            new Item.Properties().tab(CreativeModeTab.TAB_BUILDING_BLOCKS));
-
 
     public static final RegistryObject<Block> INTER_DIMENSIONAL_INTERFACE_BLOCK = registerBlock("inter_dimensional_interface",
-            new InterDimensionalInterfaceBlock(BlockBehaviour.Properties.of(Material.STONE)),
-            new Item.Properties().tab(CreativeModeTab.TAB_BUILDING_BLOCKS));
+            new InterDimensionalInterfaceBlock(BlockBehaviour.Properties.of(Material.GLASS).strength(0.5f)),
+            new Item.Properties().tab(TabInit.MAIN_TAB));
 
-    public static final RegistryObject<Block> EXAMPLE_BLOCK = registerBlock("example_block",
-            new Block(BlockBehaviour.Properties.of(Material.STONE)),
-            new Item.Properties().tab(CreativeModeTab.TAB_BUILDING_BLOCKS));
+    public static final RegistryObject<Block> TEST_BLOCK = registerBlock("test_block",
+            new TestBlock(BlockBehaviour.Properties.of(Material.GLASS).strength(0.5f)),
+            new Item.Properties().tab(TabInit.MAIN_TAB));
+
 
     // ========================================================== //
 

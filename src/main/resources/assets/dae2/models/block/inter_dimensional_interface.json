@@ -1,12 +1,12 @@
 {
 	"parent": "minecraft:block/cube",
 	"textures": {
-		"1": "dae2:block/example_block_outside",
-		"2": "dae2:block/example_block_middle",
-		"3": "dae2:block/example_block_inside",
-		"4": "dae2:block/example_block_outside_2",
-		"5": "dae2:block/example_block_inside_2",
-		"particle": "dae2:block/example_block_outside_2"
+		"1": "dae2:block/inter_dimensional_interface_outside",
+		"2": "dae2:block/inter_dimensional_interface_middle",
+		"3": "dae2:block/inter_dimensional_interface_inside",
+		"4": "dae2:block/inter_dimensional_interface_outside_2",
+		"5": "dae2:block/inter_dimensional_interface_inside_2",
+		"particle": "dae2:block/inter_dimensional_interface_outside_2"
 	},
 	"elements": [
 		{

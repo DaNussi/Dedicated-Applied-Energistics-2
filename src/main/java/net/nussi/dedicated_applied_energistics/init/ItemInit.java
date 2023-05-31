@@ -8,4 +8,5 @@ import static net.nussi.dedicated_applied_energistics.DedicatedAppliedEnegistics
 
 public class ItemInit {
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
+
 }

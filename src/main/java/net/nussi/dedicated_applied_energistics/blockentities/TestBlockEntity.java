@@ -1,56 +1,81 @@
 package net.nussi.dedicated_applied_energistics.blockentities;
 
+import appeng.api.config.AccessRestriction;
+import appeng.api.inventories.InternalInventory;
+import appeng.api.networking.IInWorldGridNodeHost;
+import appeng.api.storage.IStorageMounts;
+import appeng.api.storage.IStorageProvider;
+import appeng.api.storage.MEStorage;
+import appeng.api.storage.StorageCells;
+import appeng.api.storage.cells.StorageCell;
+import appeng.api.util.AECableType;
+import appeng.blockentity.grid.AENetworkInvBlockEntity;
+import appeng.blockentity.inventory.AppEngCellInventory;
+import appeng.core.definitions.AEItems;
+import appeng.me.cells.BasicCellHandler;
+import appeng.me.cells.CreativeCellHandler;
+import appeng.me.storage.MEInventoryHandler;
+import appeng.me.storage.NullInventory;
+import appeng.parts.storagebus.StorageBusPart;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.nussi.dedicated_applied_energistics.capabilities.TestBlockCapability;
 import net.nussi.dedicated_applied_energistics.init.BlockEntityTypeInit;
 import org.slf4j.Logger;
 
-public class TestBlockEntity extends BlockEntity {
-    private final TestBlockCapability itemHandler = new TestBlockCapability();
-    private final LazyOptional<TestBlockCapability> lazyItemHandler = LazyOptional.of(() -> this.itemHandler);
-
+public class TestBlockEntity extends AENetworkInvBlockEntity implements IStorageProvider {
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    public TestBlockEntity(BlockPos pos, BlockState state) {
-        super(BlockEntityTypeInit.TEST_BLOCK_ENTITY_TYPE.get(), pos, state);
+    private AppEngCellInventory inv = new AppEngCellInventory(this, 1);
+
+    public TestBlockEntity(BlockPos pos, BlockState blockState) {
+        super(BlockEntityTypeInit.TEST_ENTITY_TYPE.get(), pos, blockState);
     }
 
     @Override
-    public void load(CompoundTag nbt) {
-        itemHandler.deserializeNBT(nbt.getCompound("inventory"));
-        super.load(nbt);
+    public InternalInventory getInternalInventory() {
+        return inv;
     }
 
     @Override
-    public void saveAdditional(CompoundTag nbt) {
-        nbt.put("inventory", itemHandler.serializeNBT());
-        super.saveAdditional(nbt);
+    public void onChangeInventory(InternalInventory inv, int slot) {
+        LOGGER.info("onChangeInventory " + slot + " " + inv.toString());
     }
 
     @Override
-    public <T> LazyOptional<T> getCapability(Capability<T> capability, Direction direction) {
-        if (capability == ForgeCapabilities.ITEM_HANDLER
-        ) {
-            return this.lazyItemHandler.cast();
+    public void mountInventories(IStorageMounts storageMounts) {
+
+        StorageCell storageCell = BasicCellHandler.INSTANCE.getCellInventory(AEItems.ITEM_CELL_256K.stack(), null);
+        inv.setHandler(0, storageCell);
+        StorageBusInventory handler = new StorageBusInventory(storageCell);
+        storageMounts.mount(handler);
+    }
+
+    @Override
+    public AECableType getCableConnectionType(Direction dir) {
+        return AECableType.SMART;
+    }
+
+    static class StorageBusInventory extends MEInventoryHandler {
+        public StorageBusInventory(MEStorage inventory) {
+            super(inventory);
         }
-        return super.getCapability(capability, direction); // See note after snippet
+
+        @Override
+        protected MEStorage getDelegate() {
+            return super.getDelegate();
+        }
+
+        @Override
+        protected void setDelegate(MEStorage delegate) {
+            super.setDelegate(delegate);
+        }
+
+        public void setAccessRestriction(AccessRestriction setting) {
+            setAllowExtraction(setting.isAllowExtraction());
+            setAllowInsertion(setting.isAllowInsertion());
+        }
     }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        this.lazyItemHandler.invalidate();
-    }
-
-
-
-
 }
