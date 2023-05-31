@@ -7,7 +7,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.IItemHandler;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 
+import java.util.HashMap;
 import java.util.Vector;
 
 public class InterDimensionalInterfaceCapability implements IItemHandler {
@@ -20,7 +24,9 @@ public class InterDimensionalInterfaceCapability implements IItemHandler {
 
     @Override
     public int getSlots() {
-        return Integer.MAX_VALUE;
+        int amount = items.size()+1;
+//        LOGGER.info("GetSlots " + amount);
+        return amount;
     }
 
     @Override
@@ -29,7 +35,7 @@ public class InterDimensionalInterfaceCapability implements IItemHandler {
         try {
             itemStack = items.get(slot);
         } catch (Exception e) {
-            items.add(slot, null);
+            return ItemStack.EMPTY;
         }
         if(itemStack == null) return ItemStack.EMPTY;
         return itemStack;
@@ -70,19 +76,18 @@ public class InterDimensionalInterfaceCapability implements IItemHandler {
     public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
 
         try {
-            items.get(slot);
+            if(items.get(slot) == null) return ItemStack.EMPTY;
         } catch (Exception e) {
             return ItemStack.EMPTY;
         }
 
-        if(items.get(slot) == null) return ItemStack.EMPTY;
 
         ItemStack currentItemStack = items.get(slot).copy();
         if(currentItemStack.getCount() <= amount) {
             ItemStack out = currentItemStack.copy();
             out.setCount(currentItemStack.getCount());
 
-            if(!simulate) items.set(slot, null);
+            if(!simulate) items.remove(slot);
             if(!simulate) LOGGER.info("Extracted item " + out.getItem() + " x " + out.getCount());
             return out;
         } else {
@@ -102,8 +107,9 @@ public class InterDimensionalInterfaceCapability implements IItemHandler {
     }
 
     @Override
-    public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+    public boolean isItemValid(int slot, ItemStack stack) {
         try {
+            if(stack == null) return false;
             ItemStack itemStack = items.get(slot);
             if(itemStack == null) return true;
             if(itemStack.getItem() == stack.getItem()) return true;
@@ -114,8 +120,14 @@ public class InterDimensionalInterfaceCapability implements IItemHandler {
         return false;
     }
 
+
+    JedisPoolConfig poolConfig = new JedisPoolConfig();
+    JedisPool jedisPool = new JedisPool(poolConfig, "localhost");
+
     public Tag serializeNBT() {
         CompoundTag compound = new CompoundTag();
+
+        HashMap<String, String> hash = new HashMap<>();
 
         int index = 0;
         for (ItemStack itemStack : items) {
@@ -124,9 +136,14 @@ public class InterDimensionalInterfaceCapability implements IItemHandler {
             CompoundTag itemTag = itemStack.serializeNBT();
             itemTag.putInt("Count", itemStack.getCount());
 
+            hash.put(String.valueOf(index), itemTag.toString());
             compound.put(String.valueOf(index++), itemTag);
         }
         compound.putInt("InventorySize", index);
+
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.hset("Inventory", hash);
+        }
 
         return compound;
     }

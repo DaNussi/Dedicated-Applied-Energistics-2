@@ -11,6 +11,7 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.nussi.dedicated_applied_energistics.capabilities.InterDimensionalInterfaceCapability;
 import net.nussi.dedicated_applied_energistics.init.BlockEntityTypeInit;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 public class InterDimensionalInterfaceBlockEntity extends BlockEntity {
@@ -36,12 +37,11 @@ public class InterDimensionalInterfaceBlockEntity extends BlockEntity {
     }
 
     @Override
-    public <T> LazyOptional<T> getCapability(Capability<T> capability, Direction direction) {
-        if (capability == ForgeCapabilities.ITEM_HANDLER
-        ) {
+    public <T> @NotNull LazyOptional<T> getCapability(@NotNull Capability<T> capability, Direction direction) {
+        if (capability == ForgeCapabilities.ITEM_HANDLER) {
             return this.lazyItemHandler.cast();
         }
-        return super.getCapability(capability, direction); // See note after snippet
+        return super.getCapability(capability, direction);
     }
 
     @Override

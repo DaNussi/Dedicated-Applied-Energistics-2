@@ -54,6 +54,7 @@ description='''One day there will be a description...'''
     ordering="NONE"
     # Side this dependency is applied on - BOTH, CLIENT or SERVER
     side="BOTH"
+
 # Here's another dependency
 [[dependencies.dae2]]
     modId="minecraft"
