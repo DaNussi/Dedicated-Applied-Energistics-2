@@ -172,7 +172,7 @@ dependencies {
     // AE2
 //    implementation files('libs/appliedenergistics2-forge-12.9.5-api.jar')
     compileOnly(fg.deobf("appeng:appliedenergistics2-forge:12.9.4:api"))
-    compileOnly(fg.deobf("appeng:appliedenergistics2-forge:12.9.4"))
+//    compileOnly(fg.deobf("appeng:appliedenergistics2-forge:12.9.4"))
     runtimeOnly(fg.deobf("appeng:appliedenergistics2-forge:12.9.4"))
 
     // For more info...

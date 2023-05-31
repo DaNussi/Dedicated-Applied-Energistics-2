@@ -9,18 +9,18 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.nussi.dedicated_applied_energistics.capabilities.TestBlockCapability;
+import net.nussi.dedicated_applied_energistics.capabilities.InterDimensionalInterfaceCapability;
 import net.nussi.dedicated_applied_energistics.init.BlockEntityTypeInit;
 import org.slf4j.Logger;
 
-public class TestBlockEntity extends BlockEntity {
-    private final TestBlockCapability itemHandler = new TestBlockCapability();
-    private final LazyOptional<TestBlockCapability> lazyItemHandler = LazyOptional.of(() -> this.itemHandler);
+public class InterDimensionalInterfaceBlockEntity extends BlockEntity {
+    private final InterDimensionalInterfaceCapability itemHandler = new InterDimensionalInterfaceCapability();
+    private final LazyOptional<InterDimensionalInterfaceCapability> lazyItemHandler = LazyOptional.of(() -> this.itemHandler);
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    public TestBlockEntity(BlockPos pos, BlockState state) {
-        super(BlockEntityTypeInit.TEST_BLOCK_ENTITY_TYPE.get(), pos, state);
+    public InterDimensionalInterfaceBlockEntity(BlockPos pos, BlockState state) {
+        super(BlockEntityTypeInit.INTER_DIMENSIONAL_INTERFACE_ENTITY_TYPE.get(), pos, state);
     }
 
     @Override
@@ -49,7 +49,6 @@ public class TestBlockEntity extends BlockEntity {
         super.invalidateCaps();
         this.lazyItemHandler.invalidate();
     }
-
 
 
 

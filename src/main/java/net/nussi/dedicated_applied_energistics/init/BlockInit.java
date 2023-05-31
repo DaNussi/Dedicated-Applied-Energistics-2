@@ -9,6 +9,7 @@ import net.minecraft.world.level.material.Material;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
+import net.nussi.dedicated_applied_energistics.blocks.InterDimensionalInterfaceBlock;
 import net.nussi.dedicated_applied_energistics.blocks.TestBlock;
 
 import static net.nussi.dedicated_applied_energistics.DedicatedAppliedEnegistics.MODID;
@@ -23,6 +24,10 @@ public class BlockInit {
             new TestBlock(BlockBehaviour.Properties.of(Material.STONE)),
             new Item.Properties().tab(CreativeModeTab.TAB_BUILDING_BLOCKS));
 
+
+    public static final RegistryObject<Block> INTER_DIMENSIONAL_INTERFACE_BLOCK = registerBlock("inter_dimensional_interface",
+            new InterDimensionalInterfaceBlock(BlockBehaviour.Properties.of(Material.STONE)),
+            new Item.Properties().tab(CreativeModeTab.TAB_BUILDING_BLOCKS));
 
     public static final RegistryObject<Block> EXAMPLE_BLOCK = registerBlock("example_block",
             new Block(BlockBehaviour.Properties.of(Material.STONE)),
