@@ -23,4 +23,5 @@ public class DedicatedAppliedEnegistics
         ItemInit.ITEMS.register(modEventBus);
         BlockEntityTypeInit.BLOCK_ENTITY_TYPES.register(modEventBus);
     }
+
 }

@@ -9,6 +9,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.nussi.dedicated_applied_energistics.blocks.InterDimensionalInterfaceBlock;
+import net.nussi.dedicated_applied_energistics.blocks.TestBlock;
 
 import static net.nussi.dedicated_applied_energistics.DedicatedAppliedEnegistics.MODID;
 
@@ -21,6 +22,10 @@ public class BlockInit {
 
     public static final RegistryObject<Block> INTER_DIMENSIONAL_INTERFACE_BLOCK = registerBlock("inter_dimensional_interface",
             new InterDimensionalInterfaceBlock(BlockBehaviour.Properties.of(Material.GLASS).strength(0.5f)),
+            new Item.Properties().tab(TabInit.MAIN_TAB));
+
+    public static final RegistryObject<Block> TEST_BLOCK = registerBlock("test_block",
+            new TestBlock(BlockBehaviour.Properties.of(Material.GLASS).strength(0.5f)),
             new Item.Properties().tab(TabInit.MAIN_TAB));
 
 
