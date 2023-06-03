@@ -4,21 +4,30 @@ import appeng.api.inventories.BaseInternalInventory;
 import appeng.api.inventories.InternalInventory;
 import appeng.blockentity.AEBaseInvBlockEntity;
 import com.google.common.base.Preconditions;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.TagParser;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.nussi.dedicated_applied_energistics.init.BlockEntityTypeInit;
 import org.slf4j.Logger;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPubSub;
 
-import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.UUID;
 
 public class InterDimensionalInterfaceBlockEntity extends AEBaseInvBlockEntity {
     private static final Logger LOGGER = LogUtils.getLogger();
-    private final InternalInventory internalInventory = new DedicatedInternalInventory();
+    private final DedicatedInternalInventory internalInventory = new DedicatedInternalInventory("localhost", 6379, 0);
 
     public InterDimensionalInterfaceBlockEntity(BlockPos pos, BlockState state) {
         super(BlockEntityTypeInit.INTER_DIMENSIONAL_INTERFACE_ENTITY_TYPE.get(), pos, state);
+        LOGGER.info("CREATING!");
     }
 
     @Override
@@ -28,12 +37,64 @@ public class InterDimensionalInterfaceBlockEntity extends AEBaseInvBlockEntity {
 
     @Override
     public void onChangeInventory(InternalInventory inv, int slot) {
-        LOGGER.info("onChangeInventory " + slot + " " + inv.getSlotInv(slot));
+//        LOGGER.info("onChangeInventory " + slot + " " + inv.getSlotInv(slot));
     }
 
 
+    @Override
+    public void saveAdditional(CompoundTag data) {
+        // No Saving
+        LOGGER.info("SAVING!");
+    }
+
+    @Override
+    public void loadTag(CompoundTag data) {
+        // No Loading
+        LOGGER.info("LOADING!");
+    }
+
+    public void onBlockBreak() {
+        internalInventory.sendJedis.close();
+        internalInventory.reciveSub.unsubscribe(internalInventory.channel);
+        internalInventory.reciveJedis.close();
+        internalInventory.pool.close();
+    }
+
     public static class DedicatedInternalInventory extends BaseInternalInventory {
-        HashMap<Integer, ItemStack> internalInventory = new HashMap<>();
+        public Hashtable<Integer, ItemStack> internalInventory = new Hashtable<>();
+        public JedisPool pool;
+        public Jedis sendJedis;
+        public Jedis reciveJedis;
+        public JedisPubSub reciveSub;
+        public String channel;
+        public String uuid;
+        public Thread thread;
+
+        public DedicatedInternalInventory(String host, int port, int inventory) {
+            pool = new JedisPool(host, port);
+            sendJedis = pool.getResource();
+            reciveJedis = pool.getResource();
+
+            channel = inventory + ".inv";
+            uuid = UUID.randomUUID().toString();
+
+            if(!sendJedis.isConnected()) throw new RuntimeException("Jedis not connected!");
+
+            thread = new Thread(() -> {
+//                JedisPool pool = new JedisPool(host, port);
+
+                reciveSub = new JedisPubSub() {
+                    @Override
+                    public void onMessage(String channel, String message) {
+                        downloadItem(message);
+                    }
+                };
+
+                reciveJedis.subscribe(reciveSub, channel);
+            });
+            thread.start();
+        }
+
 
         @Override
         public int size() {
@@ -42,21 +103,93 @@ public class InterDimensionalInterfaceBlockEntity extends AEBaseInvBlockEntity {
 
         @Override
         public ItemStack getStackInSlot(int slotIndex) {
-            ItemStack out = internalInventory.get(slotIndex);
-            if(out == null) return ItemStack.EMPTY;
-            return out;
+            if(!internalInventory.containsKey(slotIndex)) return ItemStack.EMPTY;
+            return internalInventory.get(slotIndex);
         }
 
         @Override
         public void setItemDirect(int slotIndex, ItemStack stack) {
             if(stack.getCount() == 0) {
                 internalInventory.remove(slotIndex);
-                return;
+            } else {
+                internalInventory.put(slotIndex, stack);
             }
-            internalInventory.put(slotIndex, stack);
-            LOGGER.info("Stack: " + slotIndex + " " + stack.getItem() + " x " + stack.getCount());
+
+
+            // Upload Item
+            uploadItem(slotIndex, stack);
         }
 
+        public void uploadItem(int slotIndex, ItemStack stack) {
+            CompoundTag data = new CompoundTag();
+            if(stack.getCount() == 0) {
+                data.putBoolean("Delete", true);
+            } else {
+                data.put("Item", serializeItem(stack));
+            }
+            data.putInt("Slot", slotIndex);
+            data.putString("UUID", uuid);
+
+            LOGGER.info("Sent["+this.uuid+"] " + stack);
+            sendJedis.publish(channel, data.getAsString());
+        }
+
+        public void downloadItem(String text) {
+            try {
+                CompoundTag data = TagParser.parseTag(text);
+                String uuid = data.getString("UUID");
+                if(uuid.equals(this.uuid)) return;
+
+                int slotIndex = data.getInt("Slot");
+
+                if(data.contains("Delete")) {
+                    internalInventory.remove(slotIndex);
+                    LOGGER.info("Received["+this.uuid+"] " + ItemStack.EMPTY);
+                    return;
+                }
+
+                Tag itemCompoundTag = data.get("Item");
+                ItemStack itemStack = deserializeItem((CompoundTag) itemCompoundTag);
+
+                LOGGER.info("Received["+this.uuid+"] " + itemStack);
+                internalInventory.put(slotIndex, itemStack);
+            } catch (CommandSyntaxException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        /** Can serialize ItemStacks larger then 64 **/
+        public CompoundTag serializeItem(ItemStack itemStack) {
+            CompoundTag compoundTag = itemStack.serializeNBT();
+
+            compoundTag.remove("Count"); // Not sure if I need this C:
+            compoundTag.putInt("Count", itemStack.getCount());
+
+            return compoundTag;
+        }
+
+        /** Can deserialize ItemStacks larger then 64 **/
+        public ItemStack deserializeItem(CompoundTag compoundTag) {
+            try {
+                ItemStack out = ItemStack.of(compoundTag);
+                out.setCount(compoundTag.getInt("Count"));
+                return out;
+            } catch (Exception e) {
+                return ItemStack.EMPTY;
+            }
+        }
+
+        public String getRedisIndex(int slotIndex) {
+            StringBuilder builder = new StringBuilder();
+
+            builder.append("0");
+            builder.append(".inv");
+            builder.append("/");
+            builder.append(slotIndex);
+            builder.append(".slot");
+
+            return builder.toString();
+        }
 
         /**
          * Simular to the Original Method but without the maximum slot size check
@@ -102,5 +235,6 @@ public class InterDimensionalInterfaceBlockEntity extends AEBaseInvBlockEntity {
             }
         }
     }
+
 
 }
