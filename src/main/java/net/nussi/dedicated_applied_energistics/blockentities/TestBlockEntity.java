@@ -1,77 +1,163 @@
 package net.nussi.dedicated_applied_energistics.blockentities;
 
-import appeng.api.config.AccessRestriction;
 import appeng.api.inventories.BaseInternalInventory;
 import appeng.api.inventories.InternalInventory;
-import appeng.api.networking.IInWorldGridNodeHost;
-import appeng.api.storage.IStorageMounts;
-import appeng.api.storage.IStorageProvider;
-import appeng.api.storage.MEStorage;
-import appeng.api.storage.StorageCells;
-import appeng.api.storage.cells.StorageCell;
-import appeng.api.util.AECableType;
-import appeng.blockentity.grid.AENetworkInvBlockEntity;
-import appeng.blockentity.inventory.AppEngCellInventory;
-import appeng.core.definitions.AEItems;
-import appeng.me.cells.BasicCellHandler;
-import appeng.me.cells.CreativeCellHandler;
-import appeng.me.storage.MEInventoryHandler;
-import appeng.me.storage.NullInventory;
-import appeng.parts.storagebus.StorageBusPart;
-import appeng.util.inv.AppEngInternalInventory;
+import appeng.blockentity.AEBaseInvBlockEntity;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Stopwatch;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.TagParser;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.nussi.dedicated_applied_energistics.init.BlockEntityTypeInit;
+import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 
-import java.util.HashMap;
-
-public class TestBlockEntity extends AENetworkInvBlockEntity {
+public class TestBlockEntity extends AEBaseInvBlockEntity {
     private static final Logger LOGGER = LogUtils.getLogger();
+    private final InternalInventory internalInventory = new DedicatedInternalInventory();
 
-    private DedicatedInternalInventory inv = new DedicatedInternalInventory();
-
-    public TestBlockEntity(BlockPos pos, BlockState blockState) {
-        super(BlockEntityTypeInit.TEST_ENTITY_TYPE.get(), pos, blockState);
+    public TestBlockEntity(BlockPos pos, BlockState state) {
+        super(BlockEntityTypeInit.TEST_ENTITY_TYPE.get(), pos, state);
     }
 
     @Override
     public InternalInventory getInternalInventory() {
-        return inv;
+        return internalInventory;
     }
 
     @Override
     public void onChangeInventory(InternalInventory inv, int slot) {
-        LOGGER.info("onChangeInventory " + slot + " " + inv.toString());
+        // THIS METHOD IS BROKEN AN SHOULD NOT BE USED
+//        LOGGER.info("onChangeInventory " + slot + " " + inv.getSlotInv(slot));
     }
 
 
+    @Override
+    public void saveAdditional(CompoundTag data) {
+        // No Saving
+    }
+
+    @Override
+    public void loadTag(CompoundTag data) {
+        // No Loading
+    }
+
     public static class DedicatedInternalInventory extends BaseInternalInventory {
+        JedisPool pool = new JedisPool("localhost", 6379);
+        Jedis jedis = pool.getResource();
 
-        HashMap<Integer, ItemStack> inventory = new HashMap<>();
+        public String getRedisIndex(int slotIndex) {
+            StringBuilder builder = new StringBuilder();
 
-        public DedicatedInternalInventory() {
+            builder.append("0");
+            builder.append(".inv");
+            builder.append("/");
+            builder.append(slotIndex);
+            builder.append(".slot");
 
+            return builder.toString();
         }
+
+
 
         @Override
         public int size() {
-            return inventory.size() + 1;
+            return Math.toIntExact(jedis.dbSize()) + 1;
         }
 
         @Override
         public ItemStack getStackInSlot(int slotIndex) {
-            ItemStack itemStack = inventory.get(slotIndex);
-            if(itemStack == null) itemStack = ItemStack.EMPTY;
-            return itemStack;
+            String redisIndex = getRedisIndex(slotIndex);
+
+            if(!jedis.exists(redisIndex)) return ItemStack.EMPTY;
+
+            try {
+                Stopwatch stopwatch = Stopwatch.createStarted();
+                stopwatch.reset();
+                stopwatch.start();
+                String data = jedis.get(redisIndex);
+                stopwatch.stop();
+                LOGGER.info("Retrieve data took: " + stopwatch.elapsed());
+
+                CompoundTag compoundTag = TagParser.parseTag(data);
+                ItemStack out = ItemStack.of(compoundTag);
+                out.setCount(compoundTag.getInt("Count"));
+                return out;
+            } catch (CommandSyntaxException e) {
+                return ItemStack.EMPTY;
+            }
         }
 
         @Override
         public void setItemDirect(int slotIndex, ItemStack stack) {
-            inventory.put(slotIndex, stack);
+            String redisIndex = getRedisIndex(slotIndex);
+
+            if(stack.getCount() == 0) {
+                if(!jedis.exists(redisIndex)) return;
+                jedis.del(redisIndex);
+                return;
+            }
+
+            CompoundTag compoundTag = stack.serializeNBT();
+
+            compoundTag.remove("Count");
+            compoundTag.putInt("Count", stack.getCount());
+
+
+            String data = compoundTag.getAsString();
+            jedis.set(redisIndex, data);
+//            LOGGER.info("Stack: " + slotIndex + " " + stack.getItem() + " x " + stack.getCount());
+        }
+
+
+        /**
+         * Simular to the Original Method but without the maximum slot size check
+         * @param slot
+         * @param stack
+         * @param simulate
+         * @return
+         */
+        @Override
+        public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
+            Preconditions.checkArgument(slot >= 0 && slot < size(), "slot out of range");
+
+            if (stack.isEmpty() || !isItemValid(slot, stack)) {
+                return stack;
+            }
+
+            var inSlot = getStackInSlot(slot);
+            if (!inSlot.isEmpty() && !ItemStack.isSameItemSameTags(inSlot, stack)) {
+                return stack;
+            }
+
+            // Calculate how much free space there is in the targeted slot, considering
+            // an item-dependent maximum stack size, as well as a potential slot-based limit
+            int maxSpace = Integer.MAX_VALUE;                                               // Nussi Edit: Modified to not Check for maxSpace!
+            int freeSpace = maxSpace - inSlot.getCount();
+            if (freeSpace <= 0) {
+                return stack;
+            }
+
+            var insertAmount = Math.min(stack.getCount(), freeSpace);
+            if (!simulate) {
+                var newItem = inSlot.isEmpty() ? stack.copy() : inSlot.copy();
+                newItem.setCount(inSlot.getCount() + insertAmount);
+                setItemDirect(slot, newItem);
+            }
+
+            if (freeSpace >= stack.getCount()) {
+                return ItemStack.EMPTY;
+            } else {
+                var r = stack.copy();
+                r.shrink(insertAmount);
+                return r;
+            }
         }
     }
 
