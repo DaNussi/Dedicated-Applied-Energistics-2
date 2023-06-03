@@ -87,8 +87,6 @@ public class InterDimensionalInterfaceBlockEntity extends AEBaseInvBlockEntity {
             }
 
             thread = new Thread(() -> {
-//                JedisPool pool = new JedisPool(host, port);
-
                 reciveSub = new JedisPubSub() {
                     @Override
                     public void onMessage(String channel, String message) {
@@ -116,7 +114,8 @@ public class InterDimensionalInterfaceBlockEntity extends AEBaseInvBlockEntity {
         @Override
         public void setItemDirect(int slotIndex, ItemStack stack) {
             if(stack.getCount() == 0) {
-                internalInventory.remove(slotIndex);
+//                internalInventory.remove(slotIndex);
+                internalInventory.put(slotIndex, ItemStack.EMPTY);
             } else {
                 internalInventory.put(slotIndex, stack);
             }
@@ -142,11 +141,7 @@ public class InterDimensionalInterfaceBlockEntity extends AEBaseInvBlockEntity {
 
             // REDIS
             String redisIndex = getRedisIndex(slotIndex);
-            if(sendJedis.exists(redisIndex) && stack.getCount() == 0) {
-                sendJedis.del(redisIndex);
-            } else {
-                sendJedis.set(getRedisIndex(slotIndex), data.getAsString());
-            }
+            sendJedis.set(redisIndex, data.getAsString());
         }
 
         public void downloadItem(String text) {
@@ -158,7 +153,7 @@ public class InterDimensionalInterfaceBlockEntity extends AEBaseInvBlockEntity {
                 int slotIndex = data.getInt("Slot");
 
                 if(data.contains("Delete")) {
-                    internalInventory.remove(slotIndex);
+                    internalInventory.put(slotIndex, ItemStack.EMPTY);
                     LOGGER.info("Received["+this.uuid+"] " + ItemStack.EMPTY);
                     return;
                 }
