@@ -27,7 +27,7 @@ public class InterDimensionalInterfaceBlockEntity extends AEBaseInvBlockEntity {
 
     public InterDimensionalInterfaceBlockEntity(BlockPos pos, BlockState state) {
         super(BlockEntityTypeInit.INTER_DIMENSIONAL_INTERFACE_ENTITY_TYPE.get(), pos, state);
-        LOGGER.info("CREATING!");
+        LOGGER.info("CREATING ENTITY!");
     }
 
     @Override
@@ -44,20 +44,22 @@ public class InterDimensionalInterfaceBlockEntity extends AEBaseInvBlockEntity {
     @Override
     public void saveAdditional(CompoundTag data) {
         // No Saving
-        LOGGER.info("SAVING!");
+        LOGGER.info("SAVING ENTITY!");
     }
 
     @Override
     public void loadTag(CompoundTag data) {
         // No Loading
-        LOGGER.info("LOADING!");
+        LOGGER.info("LOADING ENTITY!");
     }
 
     public void onBlockBreak() {
-        internalInventory.sendJedis.close();
-        internalInventory.reciveSub.unsubscribe(internalInventory.channel);
-        internalInventory.reciveJedis.close();
-        internalInventory.pool.close();
+        try {
+            internalInventory.sendJedis.close();
+            internalInventory.reciveJedis.close();
+            internalInventory.reciveSub.unsubscribe(internalInventory.channel);
+            internalInventory.pool.close();
+        } catch (Exception e) {}
     }
 
     public static class DedicatedInternalInventory extends BaseInternalInventory {
@@ -78,7 +80,11 @@ public class InterDimensionalInterfaceBlockEntity extends AEBaseInvBlockEntity {
             channel = inventory + ".inv";
             uuid = UUID.randomUUID().toString();
 
-            if(!sendJedis.isConnected()) throw new RuntimeException("Jedis not connected!");
+            for (String redisIndex : reciveJedis.keys(channel+"/*.slot")) {
+                if(!reciveJedis.exists(redisIndex)) continue;
+                String data = reciveJedis.get(redisIndex);
+                downloadItem(data);
+            }
 
             thread = new Thread(() -> {
 //                JedisPool pool = new JedisPool(host, port);
@@ -122,16 +128,25 @@ public class InterDimensionalInterfaceBlockEntity extends AEBaseInvBlockEntity {
 
         public void uploadItem(int slotIndex, ItemStack stack) {
             CompoundTag data = new CompoundTag();
+            CompoundTag itemData = serializeItem(stack);
             if(stack.getCount() == 0) {
                 data.putBoolean("Delete", true);
             } else {
-                data.put("Item", serializeItem(stack));
+                data.put("Item", itemData);
             }
             data.putInt("Slot", slotIndex);
             data.putString("UUID", uuid);
 
             LOGGER.info("Sent["+this.uuid+"] " + stack);
             sendJedis.publish(channel, data.getAsString());
+
+            // REDIS
+            String redisIndex = getRedisIndex(slotIndex);
+            if(sendJedis.exists(redisIndex) && stack.getCount() == 0) {
+                sendJedis.del(redisIndex);
+            } else {
+                sendJedis.set(getRedisIndex(slotIndex), data.getAsString());
+            }
         }
 
         public void downloadItem(String text) {
