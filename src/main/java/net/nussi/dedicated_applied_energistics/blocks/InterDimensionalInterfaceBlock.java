@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 @Mod.EventBusSubscriber(modid = DedicatedAppliedEnegistics.MODID)
 public class InterDimensionalInterfaceBlock extends Block implements EntityBlock {
     private static final Logger LOGGER = LogUtils.getLogger();
-    InterDimensionalInterfaceBlockEntity blockEntity;
+    public InterDimensionalInterfaceBlockEntity blockEntity;
 
     public InterDimensionalInterfaceBlock(BlockBehaviour.Properties properties) {
         super(properties);
@@ -28,15 +28,9 @@ public class InterDimensionalInterfaceBlock extends Block implements EntityBlock
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        if(this.blockEntity != null) return this.blockEntity;
+//        if(this.blockEntity != null) return this.blockEntity;
         this.blockEntity =  BlockEntityTypeInit.INTER_DIMENSIONAL_INTERFACE_ENTITY_TYPE.get().create(pos, state);
-        return blockEntity;
+        return this.blockEntity;
     }
 
-    @SubscribeEvent
-    public static void onBlockBreak(BlockEvent.BreakEvent event) {
-        if(event.getState().getBlock() instanceof InterDimensionalInterfaceBlock block) {
-            block.blockEntity.onBlockBreak();
-        }
-    }
 }

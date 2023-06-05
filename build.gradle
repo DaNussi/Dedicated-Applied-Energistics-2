@@ -178,7 +178,6 @@ dependencies {
     minecraftLibrary  'redis.clients:jedis:3.6.0'
     minecraftLibrary  'org.apache.commons:commons-pool2:2.11.1'
 
-
     /*
 
 		<dependency>

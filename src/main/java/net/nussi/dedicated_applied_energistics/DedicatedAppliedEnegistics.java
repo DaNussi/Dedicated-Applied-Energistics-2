@@ -5,9 +5,9 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.nussi.dedicated_applied_energistics.blocks.InterDimensionalInterfaceBlock;
 import net.nussi.dedicated_applied_energistics.init.BlockEntityTypeInit;
 import net.nussi.dedicated_applied_energistics.init.BlockInit;
+import net.nussi.dedicated_applied_energistics.init.CellInit;
 import net.nussi.dedicated_applied_energistics.init.ItemInit;
 import org.slf4j.Logger;
 
@@ -24,13 +24,11 @@ public class DedicatedAppliedEnegistics
         BlockInit.BLOCKS.register(modEventBus);
         ItemInit.ITEMS.register(modEventBus);
         BlockEntityTypeInit.BLOCK_ENTITY_TYPES.register(modEventBus);
-
-
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
+        modEventBus.addListener(DedicatedAppliedEnegistics::commonSetup);
     }
 
-    private void setup(final FMLCommonSetupEvent event) {
-        // Register your event handler
+    public static void commonSetup(FMLCommonSetupEvent event) {
+        CellInit.Init();
     }
 
 }
