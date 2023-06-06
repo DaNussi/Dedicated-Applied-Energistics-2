@@ -17,9 +17,12 @@ import appeng.blockentity.grid.AENetworkInvBlockEntity;
 import appeng.blockentity.inventory.AppEngCellInventory;
 import appeng.core.definitions.AEItems;
 import appeng.me.storage.DriveWatcher;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -28,6 +31,8 @@ import net.nussi.dedicated_applied_energistics.init.BlockEntityTypeInit;
 import net.nussi.dedicated_applied_energistics.init.ItemInit;
 import net.nussi.dedicated_applied_energistics.items.InterDimensionalStorageCell;
 import org.slf4j.Logger;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -44,6 +49,7 @@ public class InterDimensionalInterfaceBlockEntity extends AENetworkInvBlockEntit
                 .addService(IStorageProvider.class, this)
                 .setFlags(GridFlags.REQUIRE_CHANNEL);
 
+        jedis.connect();
     }
 
     @Override
@@ -108,17 +114,51 @@ public class InterDimensionalInterfaceBlockEntity extends AENetworkInvBlockEntit
     }
 
 
-    HashMap<AEKey, Long> items = new HashMap<>();
+    Jedis jedis = new Jedis("localhost", 6379);
+
+
+    public boolean redisContains(AEKey what) {
+        return jedis.exists(redisKey(0, what));
+    }
+
+    public long redisGet(AEKey what) {
+        try {
+            String data = jedis.get(redisKey(0, what));
+            CompoundTag compoundTag = TagParser.parseTag(data);
+
+            return compoundTag.getLong("Count");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void redisPut(AEKey what, long amount) {
+        CompoundTag compoundTag = new CompoundTag();
+        compoundTag.putLong("Count", amount);
+        compoundTag.put("Item", what.toTagGeneric());
+
+        jedis.set(redisKey(0, what), compoundTag.toString());
+    }
+
+    public void redisRemove(AEKey what) {
+        jedis.del(redisKey(0, what));
+    }
+
+    public static String redisKey(int inv, AEKey what) {
+        return inv + ".inv/" + what.hashCode() + ".item";
+    }
 
     @Override
     public long insert(AEKey what, long amount, Actionable mode, IActionSource source) {
 
-        if(items.containsKey(what)) {
-            long a = items.get(what);
-            a += amount;
-            if(!mode.isSimulate()) items.put(what, a);
+        if(redisContains(what)) {
+            long originalValue = redisGet(what);
+            long newValue = originalValue + amount;
+
+            if(originalValue > newValue) return 0;
+            if(!mode.isSimulate()) redisPut(what, originalValue);
         } else {
-            if(!mode.isSimulate()) items.put(what, amount);
+            if(!mode.isSimulate()) redisPut(what, amount);
         }
 
         return amount;
@@ -126,18 +166,18 @@ public class InterDimensionalInterfaceBlockEntity extends AENetworkInvBlockEntit
 
     @Override
     public long extract(AEKey what, long amount, Actionable mode, IActionSource source) {
-        if(items.containsKey(what)) {
-            long a = items.get(what);
+        if(redisContains(what)) {
+            long a = redisGet(what);
 
             if(a > amount) {
                 a -= amount;
-                if(!mode.isSimulate()) items.put(what, a);
+                if(!mode.isSimulate()) redisPut(what, a);
                 return amount;
             } else if ( a == amount) {
-                if(!mode.isSimulate()) items.remove(what);
+                if(!mode.isSimulate()) redisRemove(what);
                 return amount;
             } else {
-                if(!mode.isSimulate()) items.remove(what);
+                if(!mode.isSimulate()) redisRemove(what);
                 return a;
             }
         } else {
@@ -147,8 +187,15 @@ public class InterDimensionalInterfaceBlockEntity extends AENetworkInvBlockEntit
 
     @Override
     public void getAvailableStacks(KeyCounter out) {
-        for(Map.Entry<AEKey, Long> pair : items.entrySet()) {
-            out.add(pair.getKey(), pair.getValue());
+        for(String key : jedis.keys(0+".inv/*.item")) {
+            try {
+                CompoundTag compoundTag = TagParser.parseTag(jedis.get(key));
+                long amount = compoundTag.getLong("Count");
+                AEKey what = AEKey.fromTagGeneric(compoundTag.getCompound("Item"));
+                out.add(what, amount);
+            } catch (Exception e) {
+                LOGGER.error("Failed to parse item tag!");
+            }
         }
     }
 
