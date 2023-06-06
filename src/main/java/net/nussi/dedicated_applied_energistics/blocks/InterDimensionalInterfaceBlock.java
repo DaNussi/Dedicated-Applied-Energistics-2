@@ -2,13 +2,12 @@ package net.nussi.dedicated_applied_energistics.blocks;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.event.level.BlockEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.nussi.dedicated_applied_energistics.DedicatedAppliedEnegistics;
 import net.nussi.dedicated_applied_energistics.blockentities.InterDimensionalInterfaceBlockEntity;
@@ -31,6 +30,12 @@ public class InterDimensionalInterfaceBlock extends Block implements EntityBlock
 //        if(this.blockEntity != null) return this.blockEntity;
         this.blockEntity =  BlockEntityTypeInit.INTER_DIMENSIONAL_INTERFACE_ENTITY_TYPE.get().create(pos, state);
         return this.blockEntity;
+    }
+
+    @Override
+    public void onRemove(BlockState p_60515_, Level p_60516_, BlockPos p_60517_, BlockState p_60518_, boolean p_60519_) {
+        super.onRemove(p_60515_, p_60516_, p_60517_, p_60518_, p_60519_);
+        this.blockEntity.onBlockBreak();
     }
 
 }
