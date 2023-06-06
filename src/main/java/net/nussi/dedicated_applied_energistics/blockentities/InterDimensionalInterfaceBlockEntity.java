@@ -12,19 +12,15 @@ import appeng.api.storage.StorageCells;
 import appeng.api.storage.cells.CellState;
 import appeng.api.storage.cells.StorageCell;
 import appeng.api.util.AECableType;
-import appeng.blockentity.grid.AENetworkBlockEntity;
 import appeng.blockentity.grid.AENetworkInvBlockEntity;
 import appeng.blockentity.inventory.AppEngCellInventory;
-import appeng.core.definitions.AEItems;
 import appeng.me.storage.DriveWatcher;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.nussi.dedicated_applied_energistics.init.BlockEntityTypeInit;
@@ -32,12 +28,10 @@ import net.nussi.dedicated_applied_energistics.init.ItemInit;
 import net.nussi.dedicated_applied_energistics.items.InterDimensionalStorageCell;
 import org.slf4j.Logger;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
 
-import java.util.HashMap;
-import java.util.Map;
 
 public class InterDimensionalInterfaceBlockEntity extends AENetworkInvBlockEntity implements IStorageProvider, StorageCell {
+
     private static final Logger LOGGER = LogUtils.getLogger();
     AppEngCellInventory inv = new AppEngCellInventory(this, 1);
     DriveWatcher driveWatcher;
@@ -49,6 +43,7 @@ public class InterDimensionalInterfaceBlockEntity extends AENetworkInvBlockEntit
                 .addService(IStorageProvider.class, this)
                 .setFlags(GridFlags.REQUIRE_CHANNEL);
 
+
         jedis.connect();
     }
 
@@ -59,6 +54,7 @@ public class InterDimensionalInterfaceBlockEntity extends AENetworkInvBlockEntit
 
     @Override
     public InternalInventory getInternalInventory() {
+
         return new AppEngCellInventory(this, 0);
     }
 
@@ -69,6 +65,7 @@ public class InterDimensionalInterfaceBlockEntity extends AENetworkInvBlockEntit
 
     @Override
     public void mountInventories(IStorageMounts storageMounts) {
+
         InterDimensionalStorageCell item = ItemInit.INTER_DIMENSIONAL_STORAGE_CELL_ITEM.get();
         item.blockEntity = this;
         ItemStack is = new ItemStack(item);
@@ -82,12 +79,14 @@ public class InterDimensionalInterfaceBlockEntity extends AENetworkInvBlockEntit
         if(cell == null) throw new RuntimeException("cell is null");
 
         inv.setHandler(0, cell);
+
         driveWatcher = new DriveWatcher(cell, () -> {});
 
         if(driveWatcher == null) throw new RuntimeException("driveWatcher is null");
 
 
         storageMounts.mount(driveWatcher);
+
 
         inv.setItemDirect(0, ItemStack.EMPTY);
     }
