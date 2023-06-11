@@ -26,40 +26,50 @@ import java.util.List;
 @Mod.EventBusSubscriber(modid = DedicatedAppliedEnegistics.MODID)
 public class InterDimensionalInterfaceBlock extends Block implements EntityBlock {
     private static final Logger LOGGER = LogUtils.getLogger();
-    private static List<InterDimensionalInterfaceBlockEntity> blockEntities = new ArrayList<>();
-    private InterDimensionalInterfaceBlockEntity blockEntity;
+
+
+    private static HashMap<String, InterDimensionalInterfaceBlockEntity> blockEntities = new HashMap<>();
+
 
     public InterDimensionalInterfaceBlock(BlockBehaviour.Properties properties) {
         super(properties);
     }
 
 
+    public static String getIndex(BlockPos pos) {
+        return pos.toShortString();
+    }
+
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        if(blockEntity != null) {
-            blockEntity.onDestroy();
-            blockEntity = null;
+        if(blockEntities.containsKey(getIndex(pos))) {
+            return blockEntities.get(getIndex(pos));
+        } else {
+            InterDimensionalInterfaceBlockEntity blockEntity = BlockEntityTypeInit.INTER_DIMENSIONAL_INTERFACE_ENTITY_TYPE.get().create(pos, state);
+            blockEntity.onCreate();
+            blockEntities.put(getIndex(pos), blockEntity);
+            return blockEntity;
         }
-
-        blockEntity = BlockEntityTypeInit.INTER_DIMENSIONAL_INTERFACE_ENTITY_TYPE.get().create(pos, state);
-        blockEntity.onCreate();
-
-        return blockEntity;
     }
 
     @Override
     public void onRemove(BlockState p_60515_, Level p_60516_, BlockPos pos, BlockState p_60518_, boolean p_60519_) {
-        if(blockEntity != null) blockEntity.onDestroy();
+        if(blockEntities.containsKey(getIndex(pos))) {
+            InterDimensionalInterfaceBlockEntity blockEntity = blockEntities.remove(getIndex(pos));
+            blockEntity.onDestroy();
+        } else {
+            throw new RuntimeException("When removing block at " + pos + " corresponding block entity wasn't found!");
+        }
     }
 
     @SubscribeEvent
     public static void onServerStopping(ServerStoppingEvent event) {
-        for(InterDimensionalInterfaceBlockEntity b : blockEntities) {
-            b.onDestroy();
+        for(InterDimensionalInterfaceBlockEntity blockEntity : blockEntities.values()) {
+            blockEntity.onDestroy();
         }
 
-        blockEntities.clear();
+        blockEntities = new HashMap<>();
     }
 
 }

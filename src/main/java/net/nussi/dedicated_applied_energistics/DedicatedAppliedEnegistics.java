@@ -5,9 +5,11 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.targets.FMLServerLaunchHandler;
 import net.nussi.dedicated_applied_energistics.init.BlockEntityTypeInit;
 import net.nussi.dedicated_applied_energistics.init.BlockInit;
 import net.nussi.dedicated_applied_energistics.init.CellInit;
@@ -31,6 +33,7 @@ public class DedicatedAppliedEnegistics
         BlockEntityTypeInit.BLOCK_ENTITY_TYPES.register(modEventBus);
         modEventBus.addListener(DedicatedAppliedEnegistics::commonSetup);
     }
+
 
     public static void commonSetup(FMLCommonSetupEvent event) {
         CellInit.Init();
