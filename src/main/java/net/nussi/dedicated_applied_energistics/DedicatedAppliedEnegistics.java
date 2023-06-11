@@ -1,22 +1,18 @@
 package net.nussi.dedicated_applied_energistics;
 
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.logging.LogUtils;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.TagParser;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.loading.targets.FMLServerLaunchHandler;
+import net.nussi.dedicated_applied_energistics.commands.ConfigCommand;
 import net.nussi.dedicated_applied_energistics.init.BlockEntityTypeInit;
 import net.nussi.dedicated_applied_energistics.init.BlockInit;
 import net.nussi.dedicated_applied_energistics.init.CellInit;
 import net.nussi.dedicated_applied_energistics.init.ItemInit;
 import org.slf4j.Logger;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPubSub;
 
 @Mod(DedicatedAppliedEnegistics.MODID)
 public class DedicatedAppliedEnegistics
@@ -32,6 +28,8 @@ public class DedicatedAppliedEnegistics
         ItemInit.ITEMS.register(modEventBus);
         BlockEntityTypeInit.BLOCK_ENTITY_TYPES.register(modEventBus);
         modEventBus.addListener(DedicatedAppliedEnegistics::commonSetup);
+
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ConfigCommand.CONFIG_SPEC, "dae2-config.toml");
     }
 
 
@@ -39,35 +37,6 @@ public class DedicatedAppliedEnegistics
         CellInit.Init();
 
 
-        new Thread(() -> {
-            new Jedis("localhost", 6379).subscribe(new JedisPubSub() {
-                Jedis jedis = new Jedis("localhost", 6379);
-
-                @Override
-                public void onMessage(String channel, String message) {
-                    try {
-                        CompoundTag compoundTag = TagParser.parseTag(message);
-                        String index = compoundTag.getString("Index");
-                        compoundTag.remove("Index");
-
-                        String UUID = compoundTag.getString("UUID");
-                        compoundTag.remove("UUID");
-
-                        Long newAmount = compoundTag.getLong("Amount");
-                        if(jedis.exists(index)) {
-                            CompoundTag currentTag = TagParser.parseTag(jedis.get(index));
-                            newAmount += currentTag.getLong("Amount");
-                        }
-                        compoundTag.putLong("Amount", newAmount);
-
-                        if(newAmount > 0) jedis.set(index, compoundTag.getAsString());
-                        else jedis.del(index);
-                    } catch (CommandSyntaxException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }, "0.inv");
-        }).start();
     }
 
 }

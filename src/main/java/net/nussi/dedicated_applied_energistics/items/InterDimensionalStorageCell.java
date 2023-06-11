@@ -16,6 +16,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.nussi.dedicated_applied_energistics.DedicatedAppliedEnegistics;
 import net.nussi.dedicated_applied_energistics.blockentities.InterDimensionalInterfaceBlockEntity;
 import net.nussi.dedicated_applied_energistics.blockentities.TestBlockEntity;
+import net.nussi.dedicated_applied_energistics.commands.ConfigCommand;
 import org.slf4j.Logger;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -32,12 +33,16 @@ public class InterDimensionalStorageCell extends AEBaseItem implements StorageCe
     public InterDimensionalInterfaceBlockEntity blockEntity;
     public InterDimensionalStorageCell(Properties properties) {
         super(properties);
-
-        redisInit();
     }
 
     @Override
-    public CellState getStatus() {return CellState.EMPTY;}
+    public CellState getStatus() {
+        if(ConfigCommand.IsRunning) {
+            return CellState.EMPTY;
+        } else {
+            return CellState.FULL;
+        }
+    }
 
     @Override
     public double getIdleDrain() {return 0;}
@@ -56,7 +61,15 @@ public class InterDimensionalStorageCell extends AEBaseItem implements StorageCe
     static JedisPubSub pubSub;
 
     public static void redisInit() {
-        jedisPool = new JedisPool("localhost", 6379);
+        ConfigCommand.Config config = ConfigCommand.currentConfig;
+
+        jedisPool = new JedisPool(
+                config.getHost(),
+                config.getPort(),
+                config.getUsername(),
+                config.getPassword()
+        );
+
         jedis = jedisPool.getResource();
         reciveJedis = jedisPool.getResource();
 //        LOGGER.info("Created 2 connections!");
@@ -66,6 +79,10 @@ public class InterDimensionalStorageCell extends AEBaseItem implements StorageCe
     }
 
     public static void redisReset() {
+        if(!localHashMap.isEmpty()) {
+            localHashMap.clear();
+        }
+
         if(jedis != null) {
             jedis.disconnect();
             jedis.close();
@@ -154,7 +171,7 @@ public class InterDimensionalStorageCell extends AEBaseItem implements StorageCe
     }
 
     public static String redisIndex(AEKey what) {
-        return redisChannel() + "/" + itemKey(what) + ".item";
+        return redisChannel() + "/" + what.toTagGeneric().getString("id") + "/" + itemKey(what) + ".item";
     }
 
     public static String redisChannel() {
@@ -167,12 +184,15 @@ public class InterDimensionalStorageCell extends AEBaseItem implements StorageCe
 
     @Override
     public long insert(AEKey what, long amount, Actionable mode, IActionSource source) {
+        if(!ConfigCommand.IsRunning) return 0;
+
         offset(what, amount, mode, false);
         return amount;
     }
 
     @Override
     public long extract(AEKey what, long amount, Actionable mode, IActionSource source) {
+        if(!ConfigCommand.IsRunning) return 0;
         if(!localHashMap.containsKey(what)) return 0;
 
         long currentAmount = localHashMap.get(what);
@@ -187,6 +207,8 @@ public class InterDimensionalStorageCell extends AEBaseItem implements StorageCe
     }
 
     public static void offset(AEKey what, long amount, Actionable mode, boolean fromMsg) {
+        if(!ConfigCommand.IsRunning) return;
+
         long newAmount = amount;
 
         if(localHashMap.containsKey(what)) {
@@ -221,9 +243,5 @@ public class InterDimensionalStorageCell extends AEBaseItem implements StorageCe
         }
     }
 
-    @SubscribeEvent
-    public static void onServerStopping(ServerStoppingEvent event) {
-        redisReset();
-    }
 
 }
