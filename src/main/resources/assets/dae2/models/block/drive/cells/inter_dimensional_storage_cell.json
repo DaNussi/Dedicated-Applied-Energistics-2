@@ -1,0 +1,6 @@
+{
+  "parent": "dae2:block/drive/drive_cell",
+  "textures": {
+    "cell": "dae2:block/drive/cells/inter_dimensional_storage_cell"
+  }
+}

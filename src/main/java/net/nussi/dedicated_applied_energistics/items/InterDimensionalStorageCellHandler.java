@@ -17,12 +17,9 @@ public class InterDimensionalStorageCellHandler implements ICellHandler {
     @Nullable
     @Override
     public StorageCell getCellInventory(ItemStack is, @Nullable ISaveProvider host) {
-        Item item = is.getItem();
-
-        if(item instanceof InterDimensionalStorageCell) {
-            return ((InterDimensionalStorageCell) item).blockEntity;
+        if(is.getItem() instanceof InterDimensionalStorageCell storageCell) {
+            return storageCell;
         }
-
         return null;
     }
 }

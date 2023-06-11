@@ -47,13 +47,23 @@ public class InterDimensionalInterfaceBlockEntity extends AENetworkInvBlockEntit
     public InterDimensionalInterfaceBlockEntity(BlockPos pos, BlockState state) {
         super(BlockEntityTypeInit.INTER_DIMENSIONAL_INTERFACE_ENTITY_TYPE.get(), pos, state);
 
+
+    }
+
+    public void onCreate() {
+        redisInit();
+
+
         this.getMainNode()
                 .addService(IStorageProvider.class, this)
                 .setFlags(GridFlags.REQUIRE_CHANNEL);
-
-
-        redisInit();
     }
+
+    public void onDestroy() {
+        redisReset();
+
+    }
+
 
     @Override
     public AECableType getCableConnectionType(Direction dir) {
@@ -135,8 +145,6 @@ public class InterDimensionalInterfaceBlockEntity extends AENetworkInvBlockEntit
     JedisPubSub pubSub;
 
     public void redisInit() {
-        this.redisReset();
-
         jedisPool = new JedisPool("localhost", 6379);
         jedis = jedisPool.getResource();
         reciveJedis = jedisPool.getResource();

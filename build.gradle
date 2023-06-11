@@ -8,6 +8,9 @@ version = '1.19.2-0.0.1'
 group = 'net.nussi.dae2' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'dae2'
 
+// Enable the Jar-in-Jar system for your mod
+jarJar.enable()
+
 // Mojang ships Java 17 to end users in 1.18+, so your mod should target Java 17.
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
@@ -165,7 +168,7 @@ dependencies {
     // JEI
 //    compileOnly(fg.deobf("mezz.jei:jei-${mc_version}-common-api:${jei_version}"))
 //    compileOnly(fg.deobf("mezz.jei:jei-${mc_version}-forge-api:${jei_version}"))
-//    runtimeOnly(fg.deobf("mezz.jei:jei-${mc_version}-forge:${jei_version}"))
+    runtimeOnly(fg.deobf("mezz.jei:jei-${mc_version}-forge:${jei_version}"))
 
 
 
@@ -175,23 +178,10 @@ dependencies {
     implementation(fg.deobf("appeng:appliedenergistics2-forge:12.9.4"))
 
     // REDIS DB
-    minecraftLibrary  'redis.clients:jedis:3.6.0'
-    minecraftLibrary  'org.apache.commons:commons-pool2:2.11.1'
-
-    /*
-
-		<dependency>
-			<groupId>redis.clients</groupId>
-			<artifactId>jedis</artifactId>
-			<version>4.3.1</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-pool2</artifactId>
-			<version>2.11.1</version>
-		</dependency>
-     */
+//    minecraftLibrary  jarJar('redis.clients:jedis:3.6.0')
+    minecraftLibrary jarJar(group: 'redis.clients', name: 'jedis', version: '[3.6.0,)')
+//    minecraftLibrary  jarJar('org.apache.commons:commons-pool2:2.11.1')
+    minecraftLibrary jarJar(group: 'org.apache.commons', name: 'commons-pool2', version: '[2.11.1,)')
 
     // For more info...
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html

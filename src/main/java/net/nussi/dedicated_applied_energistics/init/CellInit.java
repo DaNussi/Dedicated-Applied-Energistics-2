@@ -11,7 +11,7 @@ public class CellInit {
     public static void Init() {
         StorageCells.addCellHandler(new InterDimensionalStorageCellHandler());
 
-        StorageCellModels.registerModel(ItemInit.INTER_DIMENSIONAL_STORAGE_CELL_ITEM.get(), new ResourceLocation(DedicatedAppliedEnegistics.MODID, "inter_dimensional_storage_cell_model"));
+        StorageCellModels.registerModel(ItemInit.INTER_DIMENSIONAL_STORAGE_CELL_ITEM.get(), new ResourceLocation("dae2:block/drive/cells/inter_dimensional_storage_cell"));
     }
 
 }
