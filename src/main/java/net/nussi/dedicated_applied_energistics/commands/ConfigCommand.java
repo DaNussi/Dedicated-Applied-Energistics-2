@@ -45,6 +45,7 @@ public class ConfigCommand {
     public static ForgeConfigSpec.ConfigValue<String> CONFIG_VALUE_REDIS_USERNAME;
     public static ForgeConfigSpec.ConfigValue<String> CONFIG_VALUE_REDIS_PASSWORD;
     public static ForgeConfigSpec.ConfigValue<Boolean> CONFIG_VALUE_BEHAVIOUR_AUTOSTART;
+    public static ForgeConfigSpec.ConfigValue<Boolean> CONFIG_VALUE_BEHAVIOUR_VIRTUAL_INVENTORY;
 
     static {
         CONFIG_BUILDER.push("Config for DAE2!");
@@ -55,6 +56,7 @@ public class ConfigCommand {
         CONFIG_VALUE_REDIS_PASSWORD = CONFIG_BUILDER.define("REDIS_PASSWORD", pendingConfig.getPassword());
 
         CONFIG_VALUE_BEHAVIOUR_AUTOSTART = CONFIG_BUILDER.define("BEHAVIOUR_AUTOSTART", pendingConfig.getAutostart());
+        CONFIG_VALUE_BEHAVIOUR_VIRTUAL_INVENTORY = CONFIG_BUILDER.define("BEHAVIOUR_VIRTUAL_INVENTORY", pendingConfig.getVirtualInventory());
 
         CONFIG_BUILDER.pop();
         CONFIG_SPEC = CONFIG_BUILDER.build();
@@ -69,6 +71,10 @@ public class ConfigCommand {
                 .then(Commands.literal("autostart")
                         .then(Commands.literal("enable").executes(context -> autostart(context.getSource(), true)))
                         .then(Commands.literal("disable").executes(context -> autostart(context.getSource(),false)))
+                )
+                .then(Commands.literal("virtual_inventory")
+                        .then(Commands.literal("enable").executes(context -> virtualInventory(context.getSource(), true)))
+                        .then(Commands.literal("disable").executes(context -> virtualInventory(context.getSource(),false)))
                 )
                 .then(Commands.literal("config")
                         .then(Commands.literal("get")
@@ -115,7 +121,8 @@ public class ConfigCommand {
         commandSourceStack.sendSystemMessage(Component.literal(
                 "IsRunning: " + IsRunning + "\n" +
                         "IsApplied: " + IsApplied + "\n" +
-                        "Autostart: " + currentConfig.autostart + ""
+                        "Autostart: " + currentConfig.autostart + "\n" +
+                        "VirtualInventory: " + currentConfig.getVirtualInventory() + ""
         ));
 
         return 1;
@@ -209,9 +216,20 @@ public class ConfigCommand {
         return 1;
     }
 
+    private static int virtualInventory(CommandSourceStack commandSourceStack, boolean enabled) {
+        if(enabled == currentConfig.getVirtualInventory()) {
+            commandSourceStack.sendSystemMessage(Component.literal("Virtual inventory already " + enabled + "!"));
+        } else {
+            currentConfig.setVirtualInventory(enabled);
+            saveConfig();
+            commandSourceStack.sendSystemMessage(Component.literal("Set virtual inventory to " + enabled + "!"));
+        }
+        return 1;
+    }
+
     private static void onStart() throws Exception {
         InterDimensionalStorageCell.redisInit();
-        VirtualInventory.Init();
+        if(currentConfig.getVirtualInventory()) VirtualInventory.Init();
     }
 
     private static void onStop() throws Exception {
@@ -224,8 +242,9 @@ public class ConfigCommand {
         CONFIG_VALUE_REDIS_PORT.set(currentConfig.getPort());
         CONFIG_VALUE_REDIS_USERNAME.set(currentConfig.getUsername());
         CONFIG_VALUE_REDIS_PASSWORD.set(currentConfig.getPassword());
-        CONFIG_VALUE_BEHAVIOUR_AUTOSTART.set(currentConfig.getAutostart());
 
+        CONFIG_VALUE_BEHAVIOUR_AUTOSTART.set(currentConfig.getAutostart());
+        CONFIG_VALUE_BEHAVIOUR_VIRTUAL_INVENTORY.set(currentConfig.getVirtualInventory());
     }
 
     public static void loadConfig() {
@@ -237,6 +256,7 @@ public class ConfigCommand {
         );
 
         currentConfig.setAutostart(CONFIG_VALUE_BEHAVIOUR_AUTOSTART.get());
+        currentConfig.setVirtualInventory(CONFIG_VALUE_BEHAVIOUR_VIRTUAL_INVENTORY.get());
     }
 
     @SubscribeEvent
@@ -350,6 +370,7 @@ public class ConfigCommand {
         private String password;
 
         private boolean autostart = false;
+        private boolean virtualInventory = false;
 
         public Config(String data) throws CommandSyntaxException {
             CompoundTag compoundTag = TagParser.parseTag(data);
@@ -368,6 +389,14 @@ public class ConfigCommand {
 
         public static Config getDefault() {
             return new Config("localhost", 6379, "kevin", "klein");
+        }
+
+        public boolean getVirtualInventory() {
+            return virtualInventory;
+        }
+
+        public void setVirtualInventory(boolean virtualInventory) {
+            this.virtualInventory = virtualInventory;
         }
 
         public boolean getAutostart() {
