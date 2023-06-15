@@ -4,6 +4,8 @@
 
 
 * [About](#about)
+* [Items](#items)
+* [Blocks](#blocks)
 * [Contacts](#contacts)
 * [Downloads](#downloads)
 * [Installation](#installation)
@@ -21,6 +23,15 @@ This Minecraft mod aims to make [Applied Energistics 2](https://github.com/Appli
 ### How dose the mod archive this?
 Currently only the inventory is synchronised between servers. Meaning that cross server auto crafting doesn't work yet. The plan is to make the entire ME system work in the "cloud" with all features.
 
+## Items
+
+### Inter Dimensional Storage Cell
+Storage cell that connects to the cloud and stores all items in it.
+
+## Blocks
+
+### Inter Dimensional Interface
+This block is planned to hold the [Inter Dimensional Storage Cell](#inter-dimensional-storage-cell) but it is currently bugged. PLACING WILL CRASH YOUR GAME! DO NOT USE!
 
 ## Contacts
 
@@ -67,4 +78,5 @@ Thanks to everyone who contributed to [AE2](https://github.com/AppliedEnergistic
 
 ## Donation
 I am still a student and would appreciate a small donation. ;)
+
 * [☕ Buy Me A Coffee](https://bmc.link/danussi)
