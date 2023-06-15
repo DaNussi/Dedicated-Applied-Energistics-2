@@ -30,7 +30,7 @@ Currently only the inventory is synchronised between servers. Meaning that cross
 ### Inter Dimensional Storage Cell
 The Inter Dimensional Storage Cell connects to a redis database and stores all items in it. It is optimised to work with as many item types as possible.
 
-![](src/main/resources/assets/dae2/textures/git/InterDimensionalStorageCell_Recipe.png)
+![](https://github.com/DaNussi/DedicatedAppliedEnergistics/blob/master/src/main/resources/assets/dae2/textures/git/InterDimensionalStorageCell_Recipe.png?raw=true)
 
 #### Limitations
 * +10.000 item types supportet
@@ -41,7 +41,7 @@ The Inter Dimensional Storage Cell connects to a redis database and stores all i
 ### Inter Dimensional Interface
 This block is planned to hold the [Inter Dimensional Storage Cell](#inter-dimensional-storage-cell), but it is currently bugged.
 
-![](src/main/resources/assets/dae2/textures/git/InterDimensionalInterface.png)
+![](https://github.com/DaNussi/DedicatedAppliedEnergistics/blob/master/src/main/resources/assets/dae2/textures/git/InterDimensionalInterface.png?raw=true)
 
 
 # Quick Start
