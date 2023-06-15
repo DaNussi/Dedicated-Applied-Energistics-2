@@ -10,19 +10,16 @@ import appeng.items.AEBaseItem;
 import com.mojang.logging.LogUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
-import net.minecraftforge.event.server.ServerStoppingEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.nussi.dedicated_applied_energistics.DedicatedAppliedEnegistics;
 import net.nussi.dedicated_applied_energistics.blockentities.InterDimensionalInterfaceBlockEntity;
-import net.nussi.dedicated_applied_energistics.blockentities.TestBlockEntity;
 import net.nussi.dedicated_applied_energistics.commands.ConfigCommand;
 import org.slf4j.Logger;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPubSub;
 
-import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
 
@@ -54,7 +51,7 @@ public class InterDimensionalStorageCell extends AEBaseItem implements StorageCe
     static JedisPool jedisPool = new JedisPool();
     static Jedis jedis;
     static Jedis reciveJedis;
-    static HashMap<AEKey, Long> localHashMap = new HashMap<>();
+    static Hashtable<AEKey, Long> localHashMap = new Hashtable<>();
     static int inventoryIndex = 0;
     static String UUID = java.util.UUID.randomUUID().toString();
     static Thread thread;
@@ -238,7 +235,9 @@ public class InterDimensionalStorageCell extends AEBaseItem implements StorageCe
 
     @Override
     public void getAvailableStacks(KeyCounter out) {
-        for(Map.Entry<AEKey, Long> pair : localHashMap.entrySet()) {
+        Hashtable<AEKey, Long> temp = (Hashtable<AEKey, Long>) localHashMap.clone();
+
+        for(Map.Entry<AEKey, Long>  pair : temp.entrySet()) {
             out.add(pair.getKey(), pair.getValue());
         }
     }
