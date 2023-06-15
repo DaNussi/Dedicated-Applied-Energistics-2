@@ -47,7 +47,7 @@ This block is planned to hold the [Inter Dimensional Storage Cell](#inter-dimens
 
 ### Quick Start
 
-1. `/dae2 config set redis-17665.c135.eu-central-1-1.ec2.cloud.redislabs.com 17665 default FNOmb9Lj0vaptBzYOwt4ly10DabNDQDv`
+1. `/dae2 config set <host> <port> <username> <password>`
 2. `/dae2 config apply`
 3. `/dae2 virtual_inventory enable`
 4. `/dae2 autostart enable`
