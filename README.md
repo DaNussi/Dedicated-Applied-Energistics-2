@@ -43,15 +43,19 @@ This block is planned to hold the [Inter Dimensional Storage Cell](#inter-dimens
 
 ![](src/main/resources/assets/dae2/textures/git/InterDimensionalInterface.png)
 
-## Commands
 
-### Quick Start
+# Quick Start
+
+Install redis locally or get one for free [here](https://app.redislabs.com/).
+Copy the Host, Port, Username and password into the commands and run them step by step. 
 
 1. `/dae2 config set <host> <port> <username> <password>`
 2. `/dae2 config apply`
 3. `/dae2 virtual_inventory enable`
 4. `/dae2 autostart enable`
 5. `/dae2 restart`
+
+## Commands
 
 ### Config File
 There are two types of config files. 
