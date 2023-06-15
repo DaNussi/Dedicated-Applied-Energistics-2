@@ -4,12 +4,14 @@
 
 
 * [About](#about)
+* [Quick Start](#quick-start)
 * [Items](#items)
 * [Blocks](#blocks)
-* [Contacts](#contacts)
+* [Commands](#commands)
 * [Downloads](#downloads)
 * [Installation](#installation)
 * [Issues](#issues)
+* [Contacts](#contacts)
 * [Credits](#credits)
 
 
@@ -41,7 +43,40 @@ This block is planned to hold the [Inter Dimensional Storage Cell](#inter-dimens
 
 ![](src/main/resources/assets/dae2/textures/git/InterDimensionalInterface.png)
 
+## Commands
 
+### Quick Start
+
+1. `/dae2 config set redis-17665.c135.eu-central-1-1.ec2.cloud.redislabs.com 17665 default FNOmb9Lj0vaptBzYOwt4ly10DabNDQDv`
+2. `/dae2 config apply`
+3. `/dae2 virtual_inventory enable`
+4. `/dae2 autostart enable`
+5. `/dae2 restart`
+
+### Config File
+There are two types of config files. 
+
+* The first one is the current configuration. This config is loaded on start.
+* The second one is the pending configuration. It can override the current configuration with `/dae2 config apply`.
+
+### Starting
+
+* `/dae2 start`
+* `/dae2 restart`
+* `/dae2 autostart enable`
+
+
+### Stopping
+
+* `/dae2 stop`
+* `/dae2 autostart disable`
+
+### Virtual Inventory
+
+The virtual inventory must be enabled (default disabled) on only ONE server. If multiple server have virtual inventory enabled items might be lost.
+
+* `/dae2 virtual_inventory enable`
+* `/dae2 virtual_inventory disable`
 
 ## Downloads
 
