@@ -18,7 +18,7 @@ This Minecraft mod aims to make [Applied Energistics 2](https://github.com/Appli
 ### Why is there a need for this mod?
  In large modpacks, servers can get extremely laggy because of large scale automation. A solution to this problem would be to connect multiple ME systems, on different servers together inorder to spread the load.
 
-### How do we archive this?
+### How dose the mod archive this?
 Currently only the inventory is synchronised between servers. Meaning that cross server auto crafting doesn't work yet. The plan is to make the entire ME system work in the "cloud" with all features.
 
 
