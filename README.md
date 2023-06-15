@@ -28,6 +28,8 @@ Currently only the inventory is synchronised between servers. Meaning that cross
 ### Inter Dimensional Storage Cell
 The Inter Dimensional Storage Cell connects to a redis database and stores all items in it. It is optimised to work with as many item types as possible.
 
+![](src/main/resources/assets/dae2/textures/git/InterDimensionalStorageCell_Recipe.png)
+
 #### Limitations
 * +10.000 item types supportet
 * 2^64 max item amount per item type
@@ -37,12 +39,8 @@ The Inter Dimensional Storage Cell connects to a redis database and stores all i
 ### Inter Dimensional Interface
 This block is planned to hold the [Inter Dimensional Storage Cell](#inter-dimensional-storage-cell), but it is currently bugged.
 
-## Contacts
+![](src/main/resources/assets/dae2/textures/git/InterDimensionalInterface.png)
 
-* [Discord](https://discordapp.com/users/283218848130531329)
-* [GitHub](https://github.com/DaNussi)
-* [YouTube](https://www.youtube.com/channel/UClqALJaQu-uTKzWrPuYUbkA)
-* [CurseForge](https://legacy.curseforge.com/minecraft/mc-mods/dedicatedappliedenergistics)
 
 
 ## Downloads
@@ -75,6 +73,14 @@ Add these jars to the /mods folder!
 ## Issues
 
 If you finde a bug or your game crashes please create a issue [here](https://github.com/DaNussi/DedicatedAppliedEnergistics/issues)!
+
+
+## Contacts
+
+* [Discord](https://discordapp.com/users/283218848130531329)
+* [GitHub](https://github.com/DaNussi)
+* [YouTube](https://www.youtube.com/channel/UClqALJaQu-uTKzWrPuYUbkA)
+* [CurseForge](https://legacy.curseforge.com/minecraft/mc-mods/dedicatedappliedenergistics)
 
 ## Credits
 
