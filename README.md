@@ -73,7 +73,7 @@ There are two types of config files.
 
 ### Virtual Inventory
 
-The virtual inventory must be enabled (default disabled) on only ONE server. If multiple server have virtual inventory enabled items might be lost.
+The virtual inventory must be enabled (default disabled) on only ONE server. If multiple server have it enabled items might be lost.
 
 * `/dae2 virtual_inventory enable`
 * `/dae2 virtual_inventory disable`
@@ -84,7 +84,7 @@ The virtual inventory must be enabled (default disabled) on only ONE server. If 
 * [CurseForge](https://legacy.curseforge.com/minecraft/mc-mods/dedicatedappliedenergistics)
 
 ## Installation
-I created this mod to be used manly with [ATM-8](https://www.curseforge.com/minecraft/modpacks/all-the-mods-8), but it can also be installed standalone.
+I created this mod to be used mainly with [ATM-8](https://www.curseforge.com/minecraft/modpacks/all-the-mods-8), but it can also be installed standalone.
 
 With dependencies of course ;)
 
