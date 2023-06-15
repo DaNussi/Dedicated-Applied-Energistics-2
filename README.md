@@ -36,6 +36,7 @@ Currently only the inventory is synchronised between servers. Meaning that cross
 * [CurseForge](https://legacy.curseforge.com/minecraft/mc-mods/dedicatedappliedenergistics)
 
 ## Installation
+I created this mod to be used manly with [ATM-8](https://www.curseforge.com/minecraft/modpacks/all-the-mods-8), but it can also be installed standalone. With dependencies of course ;)
 
 ### Basic Install
 Forge version
@@ -54,7 +55,7 @@ Add these jars to the /mods folder!
 
 ## Issues
 
-If you finde a bug or your game crashes pleas create a issue [here](https://github.com/DaNussi/DedicatedAppliedEnergistics/issues)!
+If you finde a bug or your game crashes please create a issue [here](https://github.com/DaNussi/DedicatedAppliedEnergistics/issues)!
 
 ## Credits
 
