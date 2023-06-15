@@ -3,7 +3,6 @@ package net.nussi.dedicated_applied_energistics.init;
 import appeng.api.client.StorageCellModels;
 import appeng.api.storage.StorageCells;
 import net.minecraft.resources.ResourceLocation;
-import net.nussi.dedicated_applied_energistics.DedicatedAppliedEnegistics;
 import net.nussi.dedicated_applied_energistics.items.InterDimensionalStorageCellHandler;
 
 public class CellInit {

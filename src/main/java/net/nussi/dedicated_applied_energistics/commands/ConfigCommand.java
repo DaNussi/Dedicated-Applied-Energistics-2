@@ -24,8 +24,6 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPubSub;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 @Mod.EventBusSubscriber(modid = DedicatedAppliedEnegistics.MODID)
 public class ConfigCommand {

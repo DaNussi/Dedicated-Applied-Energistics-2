@@ -3,9 +3,7 @@ package net.nussi.dedicated_applied_energistics.items;
 import appeng.api.storage.cells.ICellHandler;
 import appeng.api.storage.cells.ISaveProvider;
 import appeng.api.storage.cells.StorageCell;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.nussi.dedicated_applied_energistics.blockentities.InterDimensionalInterfaceBlockEntity;
 import org.jetbrains.annotations.Nullable;
 
 public class InterDimensionalStorageCellHandler implements ICellHandler {

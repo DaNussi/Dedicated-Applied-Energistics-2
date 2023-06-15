@@ -26,12 +26,16 @@ Currently only the inventory is synchronised between servers. Meaning that cross
 ## Items
 
 ### Inter Dimensional Storage Cell
-Storage cell that connects to the cloud and stores all items in it.
+The Inter Dimensional Storage Cell connects to a redis database and stores all items in it. It is optimised to work with as many item types as possible.
+
+#### Limitations
+* +10.000 item types supportet
+* 2^64 max item amount per item type
 
 ## Blocks
 
 ### Inter Dimensional Interface
-This block is planned to hold the [Inter Dimensional Storage Cell](#inter-dimensional-storage-cell) but it is currently bugged. PLACING WILL CRASH YOUR GAME! DO NOT USE!
+This block is planned to hold the [Inter Dimensional Storage Cell](#inter-dimensional-storage-cell), but it is currently bugged.
 
 ## Contacts
 
