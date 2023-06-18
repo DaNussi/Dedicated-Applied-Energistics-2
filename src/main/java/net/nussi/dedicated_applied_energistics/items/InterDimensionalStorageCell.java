@@ -12,6 +12,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
 import net.minecraftforge.fml.common.Mod;
 import net.nussi.dedicated_applied_energistics.DedicatedAppliedEnegistics;
+import net.nussi.dedicated_applied_energistics.DedicatedAppliedEnergisticsController;
 import net.nussi.dedicated_applied_energistics.blockentities.InterDimensionalInterfaceBlockEntity;
 import net.nussi.dedicated_applied_energistics.commands.ConfigCommand;
 import org.slf4j.Logger;
@@ -34,7 +35,7 @@ public class InterDimensionalStorageCell extends AEBaseItem implements StorageCe
 
     @Override
     public CellState getStatus() {
-        if(ConfigCommand.IsRunning) {
+        if(DedicatedAppliedEnergisticsController.IsRunning) {
             return CellState.EMPTY;
         } else {
             return CellState.FULL;
@@ -58,17 +59,8 @@ public class InterDimensionalStorageCell extends AEBaseItem implements StorageCe
     static JedisPubSub pubSub;
 
     public static void redisInit() {
-        ConfigCommand.Config config = ConfigCommand.currentConfig;
-
-        jedisPool = new JedisPool(
-                config.getHost(),
-                config.getPort(),
-                config.getUsername(),
-                config.getPassword()
-        );
-
-        jedis = jedisPool.getResource();
-        reciveJedis = jedisPool.getResource();
+        jedis = DedicatedAppliedEnergisticsController.getJedis();
+        reciveJedis = DedicatedAppliedEnergisticsController.getJedis();
 //        LOGGER.info("Created 2 connections!");
 
         redisFetch();
@@ -181,7 +173,7 @@ public class InterDimensionalStorageCell extends AEBaseItem implements StorageCe
 
     @Override
     public long insert(AEKey what, long amount, Actionable mode, IActionSource source) {
-        if(!ConfigCommand.IsRunning) return 0;
+        if(!DedicatedAppliedEnergisticsController.IsRunning) return 0;
 
         offset(what, amount, mode, false);
         return amount;
@@ -189,7 +181,7 @@ public class InterDimensionalStorageCell extends AEBaseItem implements StorageCe
 
     @Override
     public long extract(AEKey what, long amount, Actionable mode, IActionSource source) {
-        if(!ConfigCommand.IsRunning) return 0;
+        if(!DedicatedAppliedEnergisticsController.IsRunning) return 0;
         if(!localHashMap.containsKey(what)) return 0;
 
         long currentAmount = localHashMap.get(what);
@@ -204,7 +196,7 @@ public class InterDimensionalStorageCell extends AEBaseItem implements StorageCe
     }
 
     public static void offset(AEKey what, long amount, Actionable mode, boolean fromMsg) {
-        if(!ConfigCommand.IsRunning) return;
+        if(!DedicatedAppliedEnergisticsController.IsRunning) return;
 
         long newAmount = amount;
 

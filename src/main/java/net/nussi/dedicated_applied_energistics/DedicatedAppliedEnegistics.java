@@ -29,14 +29,12 @@ public class DedicatedAppliedEnegistics
         BlockEntityTypeInit.BLOCK_ENTITY_TYPES.register(modEventBus);
         modEventBus.addListener(DedicatedAppliedEnegistics::commonSetup);
 
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ConfigCommand.CONFIG_SPEC, "dae2-config.toml");
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, DedicatedAppliedEnergisticsController.CONFIG_SPEC, "dae2-config.toml");
     }
 
 
     public static void commonSetup(FMLCommonSetupEvent event) {
         CellInit.Init();
-
-
     }
 
 }
