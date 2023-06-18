@@ -33,7 +33,7 @@ public class DedicatedAppliedEnergisticsController {
     static {
         CONFIG_BUILDER.push("Config for DAE2!");
 
-        CONFIG_VALUE_REDIS_URI = CONFIG_BUILDER.define("REDIS_URI", "localhost:6379");
+        CONFIG_VALUE_REDIS_URI = CONFIG_BUILDER.define("REDIS_URI", "redis://localhost:6379");
 
         CONFIG_VALUE_BEHAVIOUR_AUTOSTART = CONFIG_BUILDER.define("BEHAVIOUR_AUTOSTART", false);
         CONFIG_VALUE_BEHAVIOUR_VIRTUAL_INVENTORY = CONFIG_BUILDER.define("BEHAVIOUR_VIRTUAL_INVENTORY", false);
@@ -51,13 +51,13 @@ public class DedicatedAppliedEnergisticsController {
 
     public static String Start() {
         if(IsRunning) return "DAE2 already started!";
-        IsRunning = true;
         jedisPool = new JedisPool(CONFIG_VALUE_REDIS_URI.get());
 
         InterDimensionalStorageCell.redisInit();
         if(CONFIG_VALUE_BEHAVIOUR_VIRTUAL_INVENTORY.get()) VirtualInventory.Init();
         if(CONFIG_VALUE_BEHAVIOUR_INFLUXDB_LOGGER.get()) InfluxLogger.Init();
 
+        IsRunning = true;
         return "OK";
     }
 

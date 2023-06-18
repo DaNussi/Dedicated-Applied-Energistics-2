@@ -143,6 +143,7 @@ repositories {
         name = "Progwml6's maven"
         url = "https://dvs1.progwml6.com/files/maven/"
     }
+
     maven {
         // location of the maven that hosts JEI files since January 2023
         name = "Jared's maven"
@@ -180,7 +181,7 @@ dependencies {
     // REDIS DB
     minecraftLibrary jarJar(group: 'redis.clients', name: 'jedis', version: '[3.6.0,)')
     minecraftLibrary jarJar(group: 'org.apache.commons', name: 'commons-pool2', version: '[2.11.1,)')
-    minecraftLibrary jarJar(group: 'com.influxdb', name: 'influxdb-client-java', version: '[6.6.0,)')
+    minecraftLibrary jarJar(group: 'com.influxdb', name: 'influxdb-client-java', version: '[6.9.0,)')
 
 
     // For more info...

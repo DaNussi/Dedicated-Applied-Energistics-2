@@ -173,7 +173,10 @@ public class InterDimensionalStorageCell extends AEBaseItem implements StorageCe
 
     @Override
     public long insert(AEKey what, long amount, Actionable mode, IActionSource source) {
-        if(!DedicatedAppliedEnergisticsController.IsRunning) return 0;
+        if(!DedicatedAppliedEnergisticsController.IsRunning) {
+            LOGGER.warn("Can't extract items because DAE2 is stopped!");
+            return 0;
+        }
 
         offset(what, amount, mode, false);
         return amount;
@@ -181,7 +184,10 @@ public class InterDimensionalStorageCell extends AEBaseItem implements StorageCe
 
     @Override
     public long extract(AEKey what, long amount, Actionable mode, IActionSource source) {
-        if(!DedicatedAppliedEnergisticsController.IsRunning) return 0;
+        if(!DedicatedAppliedEnergisticsController.IsRunning) {
+            LOGGER.warn("Can't extract items because DAE2 is stopped!");
+            return 0;
+        }
         if(!localHashMap.containsKey(what)) return 0;
 
         long currentAmount = localHashMap.get(what);
