@@ -10,6 +10,8 @@ import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.nussi.dedicated_applied_energistics.DedicatedAppliedEnergisticsController;
+import net.nussi.dedicated_applied_energistics.modules.InfluxLogger;
+import net.nussi.dedicated_applied_energistics.modules.VirtualInventory;
 import org.slf4j.Logger;
 import redis.clients.jedis.util.JedisURIHelper;
 
@@ -32,6 +34,10 @@ public class ConfigCommand {
                 .then(Commands.literal("virtual_inventory")
                         .then(Commands.literal("enable").executes(context -> virtualInventory(context.getSource(), true)))
                         .then(Commands.literal("disable").executes(context -> virtualInventory(context.getSource(),false)))
+                )
+                .then(Commands.literal("influx_logger")
+                        .then(Commands.literal("enable").executes(context -> influxLogger(context.getSource(), true)))
+                        .then(Commands.literal("disable").executes(context -> influxLogger(context.getSource(),false)))
                 )
                 .then(Commands.literal("config")
                         .then(Commands.literal("set")
@@ -108,12 +114,29 @@ public class ConfigCommand {
             DedicatedAppliedEnergisticsController.CONFIG_VALUE_BEHAVIOUR_VIRTUAL_INVENTORY.set(enabled);
 
             if(enabled) {
-                DedicatedAppliedEnergisticsController.VirtualInventory.Init();
+                VirtualInventory.Init();
             } else {
-                DedicatedAppliedEnergisticsController.VirtualInventory.Reset();
+                VirtualInventory.Reset();
             }
 
             commandSourceStack.sendSystemMessage(Component.literal("Set virtual inventory to " + enabled + "!"));
+        }
+        return 1;
+    }
+
+    private static int influxLogger(CommandSourceStack commandSourceStack, boolean enabled) {
+        if(enabled == DedicatedAppliedEnergisticsController.CONFIG_VALUE_BEHAVIOUR_INFLUXDB_LOGGER.get()) {
+            commandSourceStack.sendSystemMessage(Component.literal("Influx logger already " + enabled + "!"));
+        } else {
+            DedicatedAppliedEnergisticsController.CONFIG_VALUE_BEHAVIOUR_INFLUXDB_LOGGER.set(enabled);
+
+            if(enabled) {
+                InfluxLogger.Init();
+            } else {
+                InfluxLogger.Reset();
+            }
+
+            commandSourceStack.sendSystemMessage(Component.literal("Set influx logger to " + enabled + "!"));
         }
         return 1;
     }

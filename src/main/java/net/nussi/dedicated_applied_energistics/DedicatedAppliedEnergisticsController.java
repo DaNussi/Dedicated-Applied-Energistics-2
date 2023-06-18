@@ -9,6 +9,8 @@ import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.nussi.dedicated_applied_energistics.items.InterDimensionalStorageCell;
+import net.nussi.dedicated_applied_energistics.modules.InfluxLogger;
+import net.nussi.dedicated_applied_energistics.modules.VirtualInventory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPubSub;
@@ -26,6 +28,7 @@ public class DedicatedAppliedEnergisticsController {
     public static ForgeConfigSpec.ConfigValue<String> CONFIG_VALUE_REDIS_URI;
     public static ForgeConfigSpec.ConfigValue<Boolean> CONFIG_VALUE_BEHAVIOUR_AUTOSTART;
     public static ForgeConfigSpec.ConfigValue<Boolean> CONFIG_VALUE_BEHAVIOUR_VIRTUAL_INVENTORY;
+    public static ForgeConfigSpec.ConfigValue<Boolean> CONFIG_VALUE_BEHAVIOUR_INFLUXDB_LOGGER;
 
     static {
         CONFIG_BUILDER.push("Config for DAE2!");
@@ -34,6 +37,7 @@ public class DedicatedAppliedEnergisticsController {
 
         CONFIG_VALUE_BEHAVIOUR_AUTOSTART = CONFIG_BUILDER.define("BEHAVIOUR_AUTOSTART", false);
         CONFIG_VALUE_BEHAVIOUR_VIRTUAL_INVENTORY = CONFIG_BUILDER.define("BEHAVIOUR_VIRTUAL_INVENTORY", false);
+        CONFIG_VALUE_BEHAVIOUR_INFLUXDB_LOGGER = CONFIG_BUILDER.define("BEHAVIOUR_INFLUXDB_LOGGER", false);
 
         CONFIG_BUILDER.pop();
         CONFIG_SPEC = CONFIG_BUILDER.build();
@@ -52,6 +56,7 @@ public class DedicatedAppliedEnergisticsController {
 
         InterDimensionalStorageCell.redisInit();
         if(CONFIG_VALUE_BEHAVIOUR_VIRTUAL_INVENTORY.get()) VirtualInventory.Init();
+        if(CONFIG_VALUE_BEHAVIOUR_INFLUXDB_LOGGER.get()) InfluxLogger.Init();
 
         return "OK";
     }
@@ -61,6 +66,7 @@ public class DedicatedAppliedEnergisticsController {
 
         InterDimensionalStorageCell.redisReset();
         VirtualInventory.Reset();
+        InfluxLogger.Reset();
 
         if(jedisPool != null) {
             jedisPool.close();
@@ -97,77 +103,5 @@ public class DedicatedAppliedEnergisticsController {
         if(CONFIG_VALUE_BEHAVIOUR_AUTOSTART.get()) Start();
     }
 
-    public static class VirtualInventory {
-        public static Jedis outerJedis;
-        public static Jedis innerJedis;
-        public static JedisPubSub pubSub;
-        public static Thread thread;
-
-        public static void Init() {
-            outerJedis = DedicatedAppliedEnergisticsController.getJedis();
-            innerJedis = DedicatedAppliedEnergisticsController.getJedis();
-
-            pubSub = new JedisPubSub() {
-                @Override
-                public void onMessage(String channel, String message) {
-                    try {
-                        CompoundTag compoundTag = TagParser.parseTag(message);
-                        String index = compoundTag.getString("Index");
-                        compoundTag.remove("Index");
-
-                        String UUID = compoundTag.getString("UUID");
-                        compoundTag.remove("UUID");
-
-                        Long newAmount = compoundTag.getLong("Amount");
-                        if(innerJedis.exists(index)) {
-                            CompoundTag currentTag = TagParser.parseTag(innerJedis.get(index));
-                            newAmount += currentTag.getLong("Amount");
-                        }
-                        compoundTag.putLong("Amount", newAmount);
-
-                        if(newAmount > 0) innerJedis.set(index, compoundTag.getAsString());
-                        else innerJedis.del(index);
-                    } catch (CommandSyntaxException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            };
-
-            thread = new Thread(() ->{
-                outerJedis.subscribe(pubSub, "0.inv");
-            });
-
-            thread.start();
-        }
-
-        public static void Reset() {
-            if(pubSub != null) {
-                pubSub.unsubscribe("0.inv");
-                pubSub.unsubscribe();
-                pubSub = null;
-            }
-
-            if(innerJedis != null) {
-                innerJedis.disconnect();
-                innerJedis.close();
-                innerJedis = null;
-            }
-
-            if(thread != null) {
-                try {
-                    thread.join();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-            if(outerJedis != null) {
-                outerJedis.disconnect();
-                outerJedis.close();
-                outerJedis = null;
-            }
-        }
-
-    }
 
 }
