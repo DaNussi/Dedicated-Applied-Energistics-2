@@ -2,13 +2,16 @@ package net.nussi.dedicated_applied_energistics.modules;
 
 import appeng.api.stacks.AEKey;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.logging.LogUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
 import net.nussi.dedicated_applied_energistics.DedicatedAppliedEnergisticsController;
+import org.slf4j.Logger;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPubSub;
 
 public class VirtualInventory {
+    private static final Logger LOGGER = LogUtils.getLogger();
     public static Jedis outerJedis;
     public static Jedis innerJedis;
     public static JedisPubSub pubSub;
@@ -36,16 +39,17 @@ public class VirtualInventory {
                     long newAmount = offsetAmount;
                     if(innerJedis.exists(index)) {
                         CompoundTag currentTag = TagParser.parseTag(innerJedis.get(index));
-                        newAmount = currentTag.getLong("Amount");
+                        newAmount += currentTag.getLong("Amount");
                         if(newAmount < 0) newAmount = 0L;
                     }
                     compoundTag.putLong("Amount", newAmount);
+
+//                    LOGGER.info("Set " + item + " to " + newAmount + "!");
 
                     if(newAmount > 0) innerJedis.set(index, compoundTag.getAsString());
                     else innerJedis.del(index);
 
                     InfluxLogger.OnVirtualInventory(key, index, offsetAmount, newAmount, UUID);
-
                 } catch (CommandSyntaxException e) {
                     throw new RuntimeException(e);
                 }

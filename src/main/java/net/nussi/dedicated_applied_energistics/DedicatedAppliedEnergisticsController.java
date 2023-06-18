@@ -1,8 +1,5 @@
 package net.nussi.dedicated_applied_energistics;
 
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.TagParser;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
@@ -13,8 +10,6 @@ import net.nussi.dedicated_applied_energistics.modules.InfluxLogger;
 import net.nussi.dedicated_applied_energistics.modules.VirtualInventory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPubSub;
-import redis.clients.jedis.util.JedisURIHelper;
 
 import java.io.IOException;
 
@@ -44,14 +39,12 @@ public class DedicatedAppliedEnergisticsController {
     }
 
 
-    static JedisPool jedisPool = new JedisPool();
     public static boolean IsRunning = false;
 
 
 
     public static String Start() {
         if(IsRunning) return "DAE2 already started!";
-        jedisPool = new JedisPool(CONFIG_VALUE_REDIS_URI.get());
 
         InterDimensionalStorageCell.redisInit();
         if(CONFIG_VALUE_BEHAVIOUR_VIRTUAL_INVENTORY.get()) VirtualInventory.Init();
@@ -68,12 +61,6 @@ public class DedicatedAppliedEnergisticsController {
         VirtualInventory.Reset();
         InfluxLogger.Reset();
 
-        if(jedisPool != null) {
-            jedisPool.close();
-            jedisPool.destroy();
-            jedisPool = null;
-        }
-
         return "OK";
     }
 
@@ -89,7 +76,7 @@ public class DedicatedAppliedEnergisticsController {
     }
 
     public static Jedis getJedis() {
-        return jedisPool.getResource();
+        return new Jedis(CONFIG_VALUE_REDIS_URI.get());
     }
 
 
