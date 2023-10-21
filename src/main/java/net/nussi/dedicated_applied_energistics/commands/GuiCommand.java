@@ -2,8 +2,10 @@ package net.nussi.dedicated_applied_energistics.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.logging.LogUtils;
+import net.minecraft.client.Minecraft;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.nussi.dedicated_applied_energistics.menus.SettingsMenuScreen;
 import org.slf4j.Logger;
 
 public class GuiCommand implements Command {
@@ -17,7 +19,7 @@ public class GuiCommand implements Command {
     }
 
     private static int gui(CommandSourceStack commandSourceStack) {
-//        NetworkHooks.openScreen(commandSourceStack.getPlayer(), new SettingsMenuProvider(), commandSourceStack.getPlayer().getOnPos());
+        Minecraft.getInstance().setScreen(new SettingsMenuScreen());
         return 1;
     }
 }
