@@ -5,7 +5,7 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.nussi.dedicated_applied_energistics.menus.SettingsMenuScreen;
+import net.nussi.dedicated_applied_energistics.menus.SettingsScreen;
 import org.slf4j.Logger;
 
 public class GuiCommand implements Command {
@@ -19,7 +19,15 @@ public class GuiCommand implements Command {
     }
 
     private static int gui(CommandSourceStack commandSourceStack) {
-        Minecraft.getInstance().setScreen(new SettingsMenuScreen());
+        try { Minecraft.getInstance().setScreen(null); } catch (Exception e) { }
+        Minecraft.getInstance().setScreen(new SettingsScreen());
+
+        /*
+        commandSourceStack.getPlayer().openMenu(new SimpleMenuProvider(
+                (worldId, inventory, player) -> new SettingsContainer(),
+                Component.literal("Settings")
+        ));
+         */
         return 1;
     }
 }
