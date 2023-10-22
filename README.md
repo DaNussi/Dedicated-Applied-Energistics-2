@@ -6,7 +6,6 @@
 * [About](#about)
 * [Quick Start](#quick-start)
 * [Items](#items)
-* [Blocks](#blocks)
 * [Commands](#commands)
 * [Downloads](#downloads)
 * [Installation](#installation)
@@ -22,7 +21,7 @@ This Minecraft mod aims to make [Applied Energistics 2](https://github.com/Appli
 ### Why is there a need for this mod?
  In large modpacks, servers can get extremely laggy because of large scale automation. A solution to this problem would be to connect multiple ME systems, on different servers together in order to spread the load.
 
-### How dose the mod archive this?
+### How dose the mod do this?
 Currently only the inventory is synchronised between servers. Meaning that cross server auto crafting doesn't work yet. The plan is to make the entire ME system work in the "cloud" with all features.
 
 ## Items
@@ -59,6 +58,7 @@ If you need help with a cloud based database follow this [Guide](wiki/GUIDE.md)
 4. Enable autostart `/dae2 autostart enable`.
 5. Start  the mod `/dae2 start`
 6. If everrything has gone well it should look like this now. `/dae2 status` ![img_1.png](wiki/img_1.png)
+7. Now you can craft a Inter Dimenional storag Cell and go wild with your items. _Yes it's nearly infinit..._
 
 ## Commands
 
@@ -108,6 +108,7 @@ If you finde a bug or your game crashes please create a issue [here](https://git
 * [GitHub](https://github.com/DaNussi)
 * [YouTube](https://www.youtube.com/channel/UClqALJaQu-uTKzWrPuYUbkA)
 * [CurseForge](https://legacy.curseforge.com/minecraft/mc-mods/dedicatedappliedenergistics)
+* [Modrinth](https://modrinth.com/mod/dedicated-applied-enegistics-2)
 
 ## Credits
 
