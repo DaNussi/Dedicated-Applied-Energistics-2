@@ -28,59 +28,54 @@ Currently only the inventory is synchronised between servers. Meaning that cross
 ## Items
 
 ### Inter Dimensional Storage Cell
-The Inter Dimensional Storage Cell connects to a redis database and stores all items in it. It is optimised to work with as many item types as possible.
+The Inter Dimensional Storage Cell connects to the database and stores all items in it. It is optimised to work with as many item types as possible.
 
 ![](https://github.com/DaNussi/DedicatedAppliedEnergistics/blob/master/src/main/resources/assets/dae2/textures/git/InterDimensionalStorageCell_Recipe.png?raw=true)
 
-#### Limitations
-* +10.000 item types supportet
-* 2^64 max item amount per item type
+[//]: # (#### Limitations)
+[//]: # (* +10.000 item types supportet)
+[//]: # (* 2^64 max item amount per item type)
 
-## Blocks
+[//]: # (## Blocks)
 
-### Inter Dimensional Interface
-This block is planned to hold the [Inter Dimensional Storage Cell](#inter-dimensional-storage-cell), but it is currently bugged.
+[//]: # ()
+[//]: # (### Inter Dimensional Interface)
 
-![](https://github.com/DaNussi/DedicatedAppliedEnergistics/blob/master/src/main/resources/assets/dae2/textures/git/InterDimensionalInterface.png?raw=true)
+[//]: # (This block is planned to hold the [Inter Dimensional Storage Cell]&#40;#inter-dimensional-storage-cell&#41;, but it is currently bugged.)
+
+[//]: # ()
+[//]: # (![]&#40;https://github.com/DaNussi/DedicatedAppliedEnergistics/blob/master/src/main/resources/assets/dae2/textures/git/InterDimensionalInterface.png?raw=true&#41;)
 
 
 # Quick Start
 
 Install redis locally or get one for free [here](https://app.redislabs.com/).
-Copy the Host, Port, Username and password into the commands and run them step by step. 
 
-1. `/dae2 config set <host> <port> <username> <password>`
-2. `/dae2 config apply`
-3. `/dae2 virtual_inventory enable`
-4. `/dae2 autostart enable`
-5. `/dae2 restart`
+1. Use `/dae2 config set "<redis-url>"` to configure the mod to use the database. 
+If you use a database on the same machine as your minecraft server you can use `/dae2 config set "redis://localhost:6379"`. 
+If you need help with a cloud based database follow this [Guide](wiki/GUIDE.md)
+
+3. Then enable the virtual inventory `/dae2 virtual_inventory enable`. This should only be enabled on ONE minecraft server that is running dae2.
+4. Enable autostart `/dae2 autostart enable`.
+5. Start  the mod `/dae2 start`
+6. If everrything has gone well it should look like this now. `/dae2 status` ![img_1.png](wiki/img_1.png)
 
 ## Commands
 
-### Config File
-There are two types of config files. 
-
-* The first one is the current configuration. This config is loaded on start.
-* The second one is the pending configuration. It can override the current configuration with `/dae2 config apply`.
-
 ### Starting
 
-* `/dae2 start`
-* `/dae2 restart`
-* `/dae2 autostart enable`
+* `/dae2 start/stop/restart` Starts/Stops/Restart the mod.
+* `/dae2 autostart enable/disable` Autostarts the mod when the minecraft server starts.
 
-
-### Stopping
-
-* `/dae2 stop`
-* `/dae2 autostart disable`
 
 ### Virtual Inventory
 
-The virtual inventory must be enabled (default disabled) on only ONE server. If multiple server have it enabled items might be lost.
+The virtual inventory must be enabled (default disabled) on only ONE server.
 
-* `/dae2 virtual_inventory enable`
-* `/dae2 virtual_inventory disable`
+> [!WARNING]
+> If multiple server have it enabled items might be lost or duplicated.
+
+* `/dae2 virtual_inventory enable/disable`
 
 ## Downloads
 
@@ -88,25 +83,18 @@ The virtual inventory must be enabled (default disabled) on only ONE server. If 
 * [CurseForge](https://legacy.curseforge.com/minecraft/mc-mods/dedicatedappliedenergistics)
 
 ## Installation
-I created this mod to be used mainly with [ATM-8](https://www.curseforge.com/minecraft/modpacks/all-the-mods-8), but it can also be installed standalone.
-
-With dependencies of course ;)
+I created this mod to be used with [ATM-8](https://www.curseforge.com/minecraft/modpacks/all-the-mods-8), please keep that in mind.
 
 ### Basic Install
 
 #### Forge version
+Install the correct version of Forge
 * [forge-1.19.2-43.2.11-installer.jar](https://maven.minecraftforge.net/net/minecraftforge/forge/1.19.2-43.2.11/forge-1.19.2-43.2.11-installer.jar)
 
 #### Jars
-These jars have to be in the /mods folder!
-* [dae2-1.19.2-0.0.1-all.jar](https://github.com/DaNussi/DedicatedAppliedEnergistics/releases/download/Forge-1.19.2/dae2-1.19.2-0.0.1-all.jar)
+Add these jars to the `mod` folder!
+* [dae2-1.19.2-0.0.2-all.jar](https://github.com/DaNussi/DedicatedAppliedEnergistics/releases/download/DAE2-1.19.2-0.0.2/dae2-1.19.2-0.0.2-all.jar)
 * [appliedenergistics2-forge-12.9.4.jar](https://github.com/AppliedEnergistics/Applied-Energistics-2/releases/download/forge%2Fv12.9.4/appliedenergistics2-forge-12.9.4.jar)
-* [appliedenergistics2-forge-12.9.4-api.jar](https://github.com/AppliedEnergistics/Applied-Energistics-2/releases/download/forge%2Fv12.9.4/appliedenergistics2-forge-12.9.4-api.jar)
-
-### With ATM-8
-
-Add these jars to the /mods folder!
-* [dae2-1.19.2-0.0.1-all.jar](https://github.com/DaNussi/DedicatedAppliedEnergistics/releases/download/Forge-1.19.2/dae2-1.19.2-0.0.1-all.jar)
 * [appliedenergistics2-forge-12.9.4-api.jar](https://github.com/AppliedEnergistics/Applied-Energistics-2/releases/download/forge%2Fv12.9.4/appliedenergistics2-forge-12.9.4-api.jar)
 
 ## Issues

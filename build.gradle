@@ -4,7 +4,7 @@ plugins {
     id 'net.minecraftforge.gradle' version '5.1.+'
 }
 
-version = '1.19.2-0.0.1'
+version = '1.19.2-0.0.2'
 group = 'net.nussi.dae2' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'dae2'
 

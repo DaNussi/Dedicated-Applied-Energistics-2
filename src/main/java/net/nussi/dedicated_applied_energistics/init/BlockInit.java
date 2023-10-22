@@ -20,7 +20,7 @@ public class BlockInit {
 
 
     public static final RegistryObject<Block> INTER_DIMENSIONAL_INTERFACE_BLOCK = registerBlock("inter_dimensional_interface",
-            new InterDimensionalInterfaceBlock(BlockBehaviour.Properties.of(Material.GLASS).strength(0.5f)),
+            new InterDimensionalInterfaceBlock(BlockBehaviour.Properties.of(Material.STONE).strength(0.5f)),
             new Item.Properties().tab(TabInit.MAIN_TAB));
 
 
