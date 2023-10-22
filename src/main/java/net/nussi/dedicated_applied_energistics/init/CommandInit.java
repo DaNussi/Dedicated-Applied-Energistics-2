@@ -17,7 +17,7 @@ public class CommandInit {
     public static void onCommandsRegister(RegisterCommandsEvent event) {
         LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("dae2");
 
-        new GuiCommand().ConfigureCommand(builder);
+//        new GuiCommand().ConfigureCommand(builder);
 
         new StartCommand().ConfigureCommand(builder);
         new StopCommand().ConfigureCommand(builder);

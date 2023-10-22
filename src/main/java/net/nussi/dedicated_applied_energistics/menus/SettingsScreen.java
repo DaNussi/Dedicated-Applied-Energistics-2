@@ -8,6 +8,7 @@ import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.nussi.dedicated_applied_energistics.DedicatedAppliedEnegistics;
@@ -49,16 +50,18 @@ public class SettingsScreen extends Screen {
 
 
 
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderColor(1,1,1,1);
+//        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+//        RenderSystem.setShaderColor(1,1,1,1);
         RenderSystem.setShaderTexture(0, IMAGE_SETTINGS_INFO);
-        blit(poseStack, 0, 0, 0, 0, IMAGE_SETTINGS_WIDTH, IMAGE_SETTINGS_HEIGHT, IMAGE_SETTINGS_WIDTH, IMAGE_SETTINGS_HEIGHT);
+        GuiComponent.blit(poseStack, 0, 0, 0, 0, IMAGE_SETTINGS_WIDTH, IMAGE_SETTINGS_HEIGHT, IMAGE_SETTINGS_WIDTH, IMAGE_SETTINGS_HEIGHT);
 
 //        String text = "Hello, Minecraft!";
 //        int x = width / 2 - font.width(text);
 //        int y = height / 2 - 10;
 //        int color = 0xFFFFFF;
 //        GuiComponent.drawString(poseStack, font, text, x, y, color);
+
+
 
 
         // Add ticking logic for EditBox in editBox
