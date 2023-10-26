@@ -1,5 +1,5 @@
 # Dedicated Applied Energistics 2
-
+[![CodeQL](https://github.com/DaNussi/Dedicated-Applied-Energistics-2/actions/workflows/codeql.yml/badge.svg?branch=master)](https://github.com/DaNussi/Dedicated-Applied-Energistics-2/actions/workflows/codeql.yml)
 ## Table of Contents
 
 
