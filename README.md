@@ -1,4 +1,4 @@
-# Dedicated Applied Energistics
+# Dedicated Applied Energistics 2
 
 ## Table of Contents
 
