@@ -1,29 +1,36 @@
 package net.nussi.dedicated_applied_energistics.providers;
 
+import appeng.api.config.Actionable;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.networking.crafting.ICraftingService;
+import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AEKey;
+import appeng.api.stacks.GenericStack;
 import appeng.api.stacks.KeyCounter;
-import appeng.me.service.CraftingService;
+import com.google.gson.Gson;
+import com.mojang.authlib.minecraft.client.ObjectMapper;
 import com.mojang.logging.LogUtils;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.TagParser;
 import net.nussi.dedicated_applied_energistics.DedicatedAppliedEnergisticsController;
 import net.nussi.dedicated_applied_energistics.blockentities.InterDimensionalInterfaceBlockEntity;
 import org.slf4j.Logger;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPubSub;
 
+import java.io.*;
 import java.util.*;
 
 public class InterDimensionalInterfaceCrafting extends DedicatedAppliedEnergisticsController.Controllable implements ICraftingProvider {
     private static final Logger LOGGER = LogUtils.getLogger();
     private String uuid = UUID.randomUUID().toString();
     private InterDimensionalInterfaceBlockEntity instance;
-    private Jedis jedis;
 
     private List<IPatternDetails> allPatterns = new ArrayList<>();
     private List<IPatternDetails> virtualPatterns = new ArrayList<>();
-    private NetworkPatternList networkPatterns = new NetworkPatternList();
+    private NetworkPatternList networkPatterns;
     private Thread thread;
     private boolean runningThread;
 
@@ -39,15 +46,47 @@ public class InterDimensionalInterfaceCrafting extends DedicatedAppliedEnergisti
     @Override
     protected void onStart() {
         LOGGER.info(uuid + " | Starting crafting provider!");
-        this.jedis = getJedis();
+        this.networkPatterns = new NetworkPatternList(
+                getJedis(),
+                getJedis(),
+                getJedis(),
+                uuid
+        );
+        this.networkPatterns.redisFetch();
+        this.networkPatterns.redisSubscriber();
 
+        onStartPatternScanner();
+
+        LOGGER.info(uuid + " | Started crafting provider!");
+    }
+
+    @Override
+    protected void onStop() {
+        LOGGER.info(uuid + " | Stopping crafting provider!");
+        try {
+            runningThread = false;
+            if(thread != null) {
+                thread.interrupt();
+                thread.join();
+                thread = null;
+            }
+
+            if(networkPatterns != null) networkPatterns.close();
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
+            e.printStackTrace();
+        }
+        LOGGER.info(uuid + " | Stopped crafting provider!");
+    }
+
+    public void onStartPatternScanner() {
         thread = new Thread(() -> {
             while (runningThread) {
                 if(instance == null) continue;
                 if(instance.getMainNode() == null) continue;
                 if(instance.getMainNode().getGrid() == null) continue;
 
-                this.allPatterns = PatterScanner.getPatterns(instance.getMainNode().getGrid());
+                this.allPatterns = getPatterns(instance.getMainNode().getGrid());
                 LOGGER.debug(uuid + " | All patterns: " + allPatterns.size());
 
                 // Checken auf unregister Patterns
@@ -61,7 +100,7 @@ public class InterDimensionalInterfaceCrafting extends DedicatedAppliedEnergisti
 
                 // Löschen von Network Pattern, wenn diese nicht mehr vorhanden sind
                 LOGGER.debug(uuid + " | Deleting non existed patterns from network!");
-                NetworkPatternList pendingDeletion = new NetworkPatternList();
+                List<NetworkPattern> pendingDeletion = new ArrayList<>();
                 for(NetworkPattern networkPattern : networkPatterns) {
                     if(!networkPattern.origin.equals(this.uuid)) {
                         LOGGER.debug(uuid + " | Skipping patter because it's not from this IDI");
@@ -102,25 +141,6 @@ public class InterDimensionalInterfaceCrafting extends DedicatedAppliedEnergisti
 
         runningThread = true;
         thread.start();
-
-        LOGGER.info(uuid + " | Started crafting provider!");
-    }
-
-    @Override
-    protected void onStop() {
-        LOGGER.info(uuid + " | Stopping crafting provider!");
-        try {
-            runningThread = false;
-            if(thread != null) {
-                thread.interrupt();
-                thread.join();
-                thread = null;
-            }
-        } catch (Exception e) {
-            LOGGER.error(e.getMessage());
-            e.printStackTrace();
-        }
-        LOGGER.info(uuid + " | Stopped crafting provider!");
     }
 
     @Override
@@ -135,6 +155,7 @@ public class InterDimensionalInterfaceCrafting extends DedicatedAppliedEnergisti
 
     @Override
     public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
+
         return false;
     }
 
@@ -149,10 +170,118 @@ public class InterDimensionalInterfaceCrafting extends DedicatedAppliedEnergisti
     }
 
     public static class NetworkPatternList extends ArrayList<NetworkPattern> {
-        public List<IPatternDetails> toPatternList() {
-            List<IPatternDetails> patterns = new ArrayList<>();
-            this.forEach(networkPattern -> patterns.add(networkPattern.pattern));
-            return patterns;
+        private Jedis fetchJedis;
+        private Jedis subJedis;
+        private Jedis writeJedis;
+        private String uuid;
+        private Thread thread;
+        private JedisPubSub pubSub;
+        private NetworkPatternList instance;
+
+        public NetworkPatternList(Jedis fetchJedis, Jedis subJedis, Jedis writeJedis, String uuid) {
+            super();
+            this.instance = this;
+            this.fetchJedis = fetchJedis;
+            this.subJedis = subJedis;
+            this.writeJedis = writeJedis;
+            this.uuid = uuid;
+        }
+
+        public void close() {
+            if(!this.isEmpty()) {
+                this.clear();
+            }
+
+            if(pubSub != null) {
+                pubSub.unsubscribe(redisChannel());
+                pubSub.unsubscribe();
+                pubSub = null;
+            }
+
+            if(thread != null) {
+                try {
+                    thread.interrupt();
+                    thread.join();
+                    thread = null;
+                } catch (Exception e) {
+                    LOGGER.error(e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        private void redisFetch() {
+            Set<String> keys = fetchJedis.keys(redisChannel()+"/*.pattern");
+            long maxCount = keys.size();
+            int counter = 1;
+
+            LOGGER.info("Fetching Patterns ...");
+            for(String key : keys) {
+                LOGGER.debug("Fetching Patterns [" + counter++ + "/" + maxCount + "]");
+
+                try {
+                    String data = fetchJedis.get(key);
+                    NetworkPattern networkPattern = (NetworkPattern) NetworkPattern.fromString(data);
+                    if(networkPattern.origin.equals(uuid)) continue;
+                    this.add(networkPattern);
+                } catch (Exception e) {
+                    LOGGER.error(e.getMessage());
+                }
+            }
+            LOGGER.debug("Fetching Patterns finished");
+        }
+
+        private void redisSubscriber() {
+            thread = new Thread(() -> {
+                try {
+                    pubSub = new JedisPubSub() {
+                        @Override
+                        public void onMessage(String channel, String message) {
+                            try {
+                                NetworkPattern networkPattern = (NetworkPattern) NetworkPattern.fromString(message);
+                                if(networkPattern.equals(uuid)) return;
+
+                                if(networkPattern.exists) {
+                                    instance.add(networkPattern);
+                                } else {
+                                    instance.remove(networkPattern);
+                                }
+                            } catch (Exception e) {
+                                LOGGER.error(e.getMessage());
+                            }
+                        }
+                    };
+
+                    subJedis.subscribe(pubSub, redisChannel());
+                } catch (Exception e) {}
+            });
+            thread.start();
+        }
+
+        public String redisChannel() {
+            return 0 + ".pattern";
+        }
+
+        @Override
+        public boolean add(NetworkPattern networkPattern) {
+            if(networkPattern.origin.equals(uuid)) {
+                networkPattern.exists = true;
+                writeJedis.publish(redisChannel(), networkPattern.toString());
+            }
+
+            return super.add(networkPattern);
+        }
+
+        @Override
+        public boolean remove(Object o) {
+            if(o instanceof NetworkPattern networkPattern) {
+                if(networkPattern.origin.equals(uuid)) {
+                    networkPattern.exists = false;
+                    writeJedis.publish(redisChannel(), networkPattern.toString());
+                }
+            }
+
+            return super.remove(o);
         }
 
         public boolean isRegistered(IPatternDetails pattern) {
@@ -164,52 +293,49 @@ public class InterDimensionalInterfaceCrafting extends DedicatedAppliedEnergisti
     }
 
     public static class NetworkPattern {
-        IPatternDetails pattern;
-        String origin;
+        public IPatternDetails pattern;
+        public String origin;
+        public boolean exists;
 
         public NetworkPattern(IPatternDetails pattern, String origin) {
             this.pattern = pattern;
             this.origin = origin;
+            this.exists = true;
+        }
+
+        public boolean isExists() {
+            return exists;
+        }
+
+        public void setExists(boolean exists) {
+            this.exists = exists;
+        }
+
+        /** Read the object from Base64 string. */
+        private static Object fromString( String s ) throws IOException ,
+                ClassNotFoundException {
+            byte [] data = Base64.getDecoder().decode( s );
+            ObjectInputStream ois = new ObjectInputStream(
+                    new ByteArrayInputStream(  data ) );
+            Object o  = ois.readObject();
+            ois.close();
+            return o;
+        }
+
+        /** Write the object to a Base64 string. */
+        private static String toString( Serializable o ) throws IOException {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream( baos );
+            oos.writeObject( o );
+            oos.close();
+            return Base64.getEncoder().encodeToString(baos.toByteArray());
         }
     }
 
-    public static class PatterScanner implements Runnable {
-        private Listener listener;
-        private Thread thread;
-        private IGrid grid;
-        private boolean running;
-
-        public PatterScanner(IGrid grid, Listener listener) {
-            this.listener = listener;
-            this.grid = grid;
-            this.running = true;
-            this.thread = new Thread(this);
-            this.thread.start();
-        }
-
-        public void close() throws InterruptedException {
-            running = false;
-            thread.join();
-        }
-
-        @Override
-        public void run() {
-            while (running) {
-                List<IPatternDetails> currentPatterns = getPatterns(grid);
-
-            }
-        }
-
-        public interface Listener {
-            void onAddPatter();
-            void onRemovePatter();
-        }
-
-        public static List<IPatternDetails> getPatterns(IGrid grid) {
-            List<IPatternDetails> currentPatterns = new ArrayList<>();
-            ICraftingService craftingService = grid.getCraftingService();
-            craftingService.getCraftables(what -> true).forEach(aeKey -> currentPatterns.addAll(craftingService.getCraftingFor(aeKey)));
-            return currentPatterns;
-        }
+    public static List<IPatternDetails> getPatterns(IGrid grid) {
+        List<IPatternDetails> currentPatterns = new ArrayList<>();
+        ICraftingService craftingService = grid.getCraftingService();
+        craftingService.getCraftables(what -> true).forEach(aeKey -> currentPatterns.addAll(craftingService.getCraftingFor(aeKey)));
+        return currentPatterns;
     }
 }
