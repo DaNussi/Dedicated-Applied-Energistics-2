@@ -32,6 +32,7 @@ public class InterDimensionalInterfaceBlockEntity extends AENetworkBlockEntity i
 
         this.getMainNode().addService(ICraftingProvider.class, this);
         this.crafting = new InterDimensionalInterfaceCrafting(this);
+
     }
 
     @Override

@@ -1,19 +1,12 @@
 package net.nussi.dedicated_applied_energistics.providers;
 
-import appeng.api.config.Actionable;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.networking.crafting.ICraftingService;
-import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AEKey;
-import appeng.api.stacks.GenericStack;
 import appeng.api.stacks.KeyCounter;
-import com.google.gson.Gson;
-import com.mojang.authlib.minecraft.client.ObjectMapper;
 import com.mojang.logging.LogUtils;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.TagParser;
 import net.nussi.dedicated_applied_energistics.DedicatedAppliedEnergisticsController;
 import net.nussi.dedicated_applied_energistics.blockentities.InterDimensionalInterfaceBlockEntity;
 import org.slf4j.Logger;
@@ -54,6 +47,7 @@ public class InterDimensionalInterfaceCrafting extends DedicatedAppliedEnergisti
         );
         this.networkPatterns.redisFetch();
         this.networkPatterns.redisSubscriber();
+
 
         onStartPatternScanner();
 
@@ -221,7 +215,7 @@ public class InterDimensionalInterfaceCrafting extends DedicatedAppliedEnergisti
 
                 try {
                     String data = fetchJedis.get(key);
-                    NetworkPattern networkPattern = (NetworkPattern) NetworkPattern.fromString(data);
+                    NetworkPattern networkPattern = NetworkPattern.fromByteArray(data.getBytes());
                     if(networkPattern.origin.equals(uuid)) continue;
                     this.add(networkPattern);
                 } catch (Exception e) {
@@ -238,7 +232,7 @@ public class InterDimensionalInterfaceCrafting extends DedicatedAppliedEnergisti
                         @Override
                         public void onMessage(String channel, String message) {
                             try {
-                                NetworkPattern networkPattern = (NetworkPattern) NetworkPattern.fromString(message);
+                                NetworkPattern networkPattern = NetworkPattern.fromByteArray(message.getBytes());
                                 if(networkPattern.equals(uuid)) return;
 
                                 if(networkPattern.exists) {
@@ -266,7 +260,7 @@ public class InterDimensionalInterfaceCrafting extends DedicatedAppliedEnergisti
         public boolean add(NetworkPattern networkPattern) {
             if(networkPattern.origin.equals(uuid)) {
                 networkPattern.exists = true;
-                writeJedis.publish(redisChannel(), networkPattern.toString());
+                writeJedis.publish(redisChannel(), new String(NetworkPattern.toByteArray(networkPattern)));
             }
 
             return super.add(networkPattern);
@@ -277,7 +271,7 @@ public class InterDimensionalInterfaceCrafting extends DedicatedAppliedEnergisti
             if(o instanceof NetworkPattern networkPattern) {
                 if(networkPattern.origin.equals(uuid)) {
                     networkPattern.exists = false;
-                    writeJedis.publish(redisChannel(), networkPattern.toString());
+                    writeJedis.publish(redisChannel(), new String(NetworkPattern.toByteArray(networkPattern)));
                 }
             }
 
@@ -292,7 +286,7 @@ public class InterDimensionalInterfaceCrafting extends DedicatedAppliedEnergisti
         }
     }
 
-    public static class NetworkPattern {
+    public static class NetworkPattern implements Serializable {
         public IPatternDetails pattern;
         public String origin;
         public boolean exists;
@@ -303,32 +297,33 @@ public class InterDimensionalInterfaceCrafting extends DedicatedAppliedEnergisti
             this.exists = true;
         }
 
-        public boolean isExists() {
-            return exists;
-        }
-
-        public void setExists(boolean exists) {
-            this.exists = exists;
-        }
-
         /** Read the object from Base64 string. */
-        private static Object fromString( String s ) throws IOException ,
-                ClassNotFoundException {
-            byte [] data = Base64.getDecoder().decode( s );
-            ObjectInputStream ois = new ObjectInputStream(
-                    new ByteArrayInputStream(  data ) );
-            Object o  = ois.readObject();
-            ois.close();
-            return o;
+        public static NetworkPattern fromByteArray(byte [] data ) {
+            try {
+                ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(  data ) );
+                NetworkPattern o  = (NetworkPattern) ois.readObject();
+                ois.close();
+                return o;
+            } catch (Exception e) {
+                LOGGER.error(e.getMessage());
+                e.printStackTrace();
+                return null;
+            }
         }
 
         /** Write the object to a Base64 string. */
-        private static String toString( Serializable o ) throws IOException {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ObjectOutputStream oos = new ObjectOutputStream( baos );
-            oos.writeObject( o );
-            oos.close();
-            return Base64.getEncoder().encodeToString(baos.toByteArray());
+        public static byte[] toByteArray( NetworkPattern o ) {
+            try {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ObjectOutputStream oos = new ObjectOutputStream( baos );
+                oos.writeObject( o );
+                oos.close();
+                return baos.toByteArray();
+            } catch (Exception e) {
+                LOGGER.error(e.getMessage());
+                e.printStackTrace();
+                return new byte[0];
+            }
         }
     }
 
