@@ -7,10 +7,8 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.nussi.dedicated_applied_energistics.commands.ConfigCommand;
 import net.nussi.dedicated_applied_energistics.init.BlockEntityTypeInit;
 import net.nussi.dedicated_applied_energistics.init.BlockInit;
-import net.nussi.dedicated_applied_energistics.init.CellInit;
 import net.nussi.dedicated_applied_energistics.init.ItemInit;
 import org.slf4j.Logger;
 
@@ -24,17 +22,14 @@ public class DedicatedAppliedEnegistics
     {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
-        BlockInit.BLOCKS.register(modEventBus);
         ItemInit.ITEMS.register(modEventBus);
+        BlockInit.BLOCKS.register(modEventBus);
         BlockEntityTypeInit.BLOCK_ENTITY_TYPES.register(modEventBus);
         modEventBus.addListener(DedicatedAppliedEnegistics::commonSetup);
 
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, DedicatedAppliedEnergisticsController.CONFIG_SPEC, "dae2-config.toml");
     }
 
-
-    public static void commonSetup(FMLCommonSetupEvent event) {
-        CellInit.Init();
-    }
+    public static void commonSetup(FMLCommonSetupEvent event) { }
 
 }

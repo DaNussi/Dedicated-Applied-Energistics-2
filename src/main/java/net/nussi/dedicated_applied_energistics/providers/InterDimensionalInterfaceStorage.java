@@ -1,81 +1,58 @@
-package net.nussi.dedicated_applied_energistics.items;
+package net.nussi.dedicated_applied_energistics.providers;
 
 import appeng.api.config.Actionable;
 import appeng.api.networking.security.IActionSource;
 import appeng.api.stacks.AEKey;
 import appeng.api.stacks.KeyCounter;
-import appeng.api.storage.cells.CellState;
-import appeng.api.storage.cells.StorageCell;
-import appeng.items.AEBaseItem;
+import appeng.api.storage.IStorageMounts;
+import appeng.api.storage.IStorageProvider;
+import appeng.api.storage.MEStorage;
 import com.mojang.logging.LogUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
-import net.minecraftforge.fml.common.Mod;
-import net.nussi.dedicated_applied_energistics.DedicatedAppliedEnegistics;
+import net.minecraft.network.chat.Component;
 import net.nussi.dedicated_applied_energistics.DedicatedAppliedEnergisticsController;
 import net.nussi.dedicated_applied_energistics.blockentities.InterDimensionalInterfaceBlockEntity;
-import net.nussi.dedicated_applied_energistics.commands.ConfigCommand;
 import org.slf4j.Logger;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPubSub;
 
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
 
-
-@Mod.EventBusSubscriber(modid = DedicatedAppliedEnegistics.MODID)
-public class InterDimensionalStorageCell extends AEBaseItem implements StorageCell {
+public class InterDimensionalInterfaceStorage extends DedicatedAppliedEnergisticsController.Controllable implements IStorageProvider, MEStorage {
     private static final Logger LOGGER = LogUtils.getLogger();
-    public InterDimensionalInterfaceBlockEntity blockEntity;
-    public InterDimensionalStorageCell(Properties properties) {
-        super(properties);
+
+    private Jedis fetchJedis;
+    private Jedis reciveJedis;
+    private Hashtable<AEKey, Long> localHashMap = new Hashtable<>();
+    private int inventoryIndex = 0;
+    private String UUID = java.util.UUID.randomUUID().toString();
+    private Thread thread;
+    private JedisPubSub pubSub;
+    private InterDimensionalInterfaceBlockEntity instance;
+
+    public InterDimensionalInterfaceStorage(InterDimensionalInterfaceBlockEntity instance) {
+        this.instance = instance;
+
+        DedicatedAppliedEnergisticsController.addControllable(this);
+        if(DedicatedAppliedEnergisticsController.IsRunning) this.externalStart();
     }
 
     @Override
-    public CellState getStatus() {
-        if(DedicatedAppliedEnergisticsController.IsRunning) {
-            return CellState.EMPTY;
-        } else {
-            return CellState.FULL;
-        }
-    }
-
-    @Override
-    public double getIdleDrain() {return 0;}
-
-    @Override
-    public void persist() {}
-
-
-    static JedisPool jedisPool = new JedisPool();
-    static Jedis jedis;
-    static Jedis reciveJedis;
-    static Hashtable<AEKey, Long> localHashMap = new Hashtable<>();
-    static int inventoryIndex = 0;
-    static String UUID = java.util.UUID.randomUUID().toString();
-    static Thread thread;
-    static JedisPubSub pubSub;
-
-    public static void redisInit() {
-        jedis = DedicatedAppliedEnergisticsController.getJedis();
-        reciveJedis = DedicatedAppliedEnergisticsController.getJedis();
-//        LOGGER.info("Created 2 connections!");
+    public void onStart() {
+        fetchJedis = getJedis();
+        reciveJedis = getJedis();
 
         redisFetch();
         redisSubscriber();
     }
 
-    public static void redisReset() {
+    @Override
+    public void onStop() {
         if(!localHashMap.isEmpty()) {
             localHashMap.clear();
-        }
-
-        if(jedis != null) {
-            jedis.disconnect();
-            jedis.close();
-            jedis = null;
         }
 
         if(pubSub != null) {
@@ -84,30 +61,19 @@ public class InterDimensionalStorageCell extends AEBaseItem implements StorageCe
             pubSub = null;
         }
 
-        if(reciveJedis != null) {
-            reciveJedis.disconnect();
-            reciveJedis.close();
-            reciveJedis = null;
-        }
-
         if(thread != null) {
             try {
                 thread.join();
                 thread = null;
-            } catch (Exception e) {}
+            } catch (Exception e) {
+                LOGGER.error(e.getMessage());
+                e.printStackTrace();
+            }
         }
-
-        if(jedisPool != null) {
-            jedisPool.close();
-            jedisPool.destroy();
-            jedisPool = null;
-        }
-
-//        LOGGER.info("Removed 2 connections!");
     }
 
-    public static void redisFetch() {
-        Set<String> keys = jedis.keys(redisChannel()+"/*.item");
+    private void redisFetch() {
+        Set<String> keys = fetchJedis.keys(redisChannel()+"/*.item");
         long maxCount = keys.size();
         int counter = 1;
 
@@ -116,7 +82,7 @@ public class InterDimensionalStorageCell extends AEBaseItem implements StorageCe
             System.out.print("\rFetching Inventory [" + counter++ + "/" + maxCount + "]");
 
             try {
-                String data = jedis.get(key);
+                String data = fetchJedis.get(key);
                 CompoundTag compoundTag = TagParser.parseTag(data);
 
                 long amount = compoundTag.getLong("Amount");
@@ -128,10 +94,9 @@ public class InterDimensionalStorageCell extends AEBaseItem implements StorageCe
                 LOGGER.error(e.getMessage());
             }
         }
-        System.out.println();
     }
 
-    public static void redisSubscriber() {
+    public void redisSubscriber() {
         thread = new Thread(() -> {
             try {
                 pubSub = new JedisPubSub() {
@@ -159,11 +124,11 @@ public class InterDimensionalStorageCell extends AEBaseItem implements StorageCe
         thread.start();
     }
 
-    public static String redisIndex(AEKey what) {
+    public String redisIndex(AEKey what) {
         return redisChannel() + "/" + what.toTagGeneric().getString("id") + "/" + itemKey(what) + ".item";
     }
 
-    public static String redisChannel() {
+    public String redisChannel() {
         return inventoryIndex + ".inv";
     }
 
@@ -173,7 +138,7 @@ public class InterDimensionalStorageCell extends AEBaseItem implements StorageCe
 
     @Override
     public long insert(AEKey what, long amount, Actionable mode, IActionSource source) {
-        if(!DedicatedAppliedEnergisticsController.IsRunning) {
+        if(!isRunning()) {
             LOGGER.warn("Can't extract items because DAE2 is stopped!");
             return 0;
         }
@@ -184,7 +149,7 @@ public class InterDimensionalStorageCell extends AEBaseItem implements StorageCe
 
     @Override
     public long extract(AEKey what, long amount, Actionable mode, IActionSource source) {
-        if(!DedicatedAppliedEnergisticsController.IsRunning) {
+        if(!isRunning()) {
             LOGGER.warn("Can't extract items because DAE2 is stopped!");
             return 0;
         }
@@ -201,8 +166,8 @@ public class InterDimensionalStorageCell extends AEBaseItem implements StorageCe
         }
     }
 
-    public static void offset(AEKey what, long amount, Actionable mode, boolean fromMsg) {
-        if(!DedicatedAppliedEnergisticsController.IsRunning) return;
+    public void offset(AEKey what, long amount, Actionable mode, boolean fromMsg) {
+        if(!isRunning()) return;
 
         long newAmount = amount;
 
@@ -219,7 +184,7 @@ public class InterDimensionalStorageCell extends AEBaseItem implements StorageCe
         compoundTag.putString("Index", redisIndex(what));
 
         if(mode != Actionable.SIMULATE) {
-            if(!fromMsg) jedis.publish(redisChannel(), compoundTag.toString());
+            if(!fromMsg) fetchJedis.publish(redisChannel(), compoundTag.toString());
 
             if(newAmount > 0) {
                 localHashMap.put(what, newAmount);
@@ -240,5 +205,13 @@ public class InterDimensionalStorageCell extends AEBaseItem implements StorageCe
         }
     }
 
+    @Override
+    public Component getDescription() {
+        return Component.literal("Inter Dimensional Interface Storage");
+    }
 
+    @Override
+    public void mountInventories(IStorageMounts storageMounts) {
+        storageMounts.mount(this);
+    }
 }
