@@ -28,7 +28,7 @@ public class InterDimensionalInterfaceStorage extends DedicatedAppliedEnergistic
     private Jedis reciveJedis;
     private Hashtable<AEKey, Long> localHashMap = new Hashtable<>();
     private int inventoryIndex = 0;
-    private String UUID = java.util.UUID.randomUUID().toString();
+    private String uuid = java.util.UUID.randomUUID().toString();
     private Thread thread;
     private JedisPubSub pubSub;
     private InterDimensionalInterfaceBlockEntity instance;
@@ -37,20 +37,23 @@ public class InterDimensionalInterfaceStorage extends DedicatedAppliedEnergistic
         this.instance = instance;
 
         DedicatedAppliedEnergisticsController.addControllable(this);
-        if(DedicatedAppliedEnergisticsController.IsRunning) this.externalStart();
+        if(DedicatedAppliedEnergisticsController.IsRunning && !this.isRunning()) this.externalStart();
     }
 
     @Override
     public void onStart() {
+        LOGGER.info(uuid + " | Starting storage provider!");
         fetchJedis = getJedis();
         reciveJedis = getJedis();
 
         redisFetch();
         redisSubscriber();
+        LOGGER.info(uuid + " | Started storage provider!");
     }
 
     @Override
     public void onStop() {
+        LOGGER.info(uuid + " | Stopping storage provider!");
         if(!localHashMap.isEmpty()) {
             localHashMap.clear();
         }
@@ -63,6 +66,7 @@ public class InterDimensionalInterfaceStorage extends DedicatedAppliedEnergistic
 
         if(thread != null) {
             try {
+                thread.interrupt();
                 thread.join();
                 thread = null;
             } catch (Exception e) {
@@ -70,6 +74,7 @@ public class InterDimensionalInterfaceStorage extends DedicatedAppliedEnergistic
                 e.printStackTrace();
             }
         }
+        LOGGER.info(uuid + " | Stopped storage provider!");
     }
 
     private void redisFetch() {
@@ -79,7 +84,7 @@ public class InterDimensionalInterfaceStorage extends DedicatedAppliedEnergistic
 
         LOGGER.info("Fetching Inventory ...");
         for(String key : keys) {
-            System.out.print("\rFetching Inventory [" + counter++ + "/" + maxCount + "]");
+            LOGGER.debug("Fetching Inventory [" + counter++ + "/" + maxCount + "]");
 
             try {
                 String data = fetchJedis.get(key);
@@ -94,6 +99,7 @@ public class InterDimensionalInterfaceStorage extends DedicatedAppliedEnergistic
                 LOGGER.error(e.getMessage());
             }
         }
+        LOGGER.debug("Fetching Inventory finished");
     }
 
     public void redisSubscriber() {
@@ -105,7 +111,7 @@ public class InterDimensionalInterfaceStorage extends DedicatedAppliedEnergistic
                         try {
                             CompoundTag compoundTag = TagParser.parseTag(message);
                             String msgUUID = compoundTag.getString("UUID");
-                            if(msgUUID.equals(UUID)) return;
+                            if(msgUUID.equals(uuid)) return;
 
                             long amount = compoundTag.getLong("Amount");
                             CompoundTag itemTag = compoundTag.getCompound("Item");
@@ -180,7 +186,7 @@ public class InterDimensionalInterfaceStorage extends DedicatedAppliedEnergistic
         CompoundTag compoundTag = new CompoundTag();
         compoundTag.putLong("Amount", amount);
         compoundTag.put("Item", what.toTagGeneric());
-        compoundTag.putString("UUID", UUID);
+        compoundTag.putString("UUID", uuid);
         compoundTag.putString("Index", redisIndex(what));
 
         if(mode != Actionable.SIMULATE) {

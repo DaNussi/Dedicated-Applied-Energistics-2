@@ -68,7 +68,14 @@ public class DedicatedAppliedEnergisticsController {
     public static String Stop() {
         IsRunning = false;
 
-        controllables.forEach(controllable -> controllable.externalStop());
+        controllables.forEach(controllable -> {
+            try {
+                controllable.externalStop();
+            } catch (Exception e) {
+                LOGGER.error(e.getMessage());
+                e.printStackTrace();
+            }
+        });
         VirtualInventory.Reset();
         InfluxLogger.Reset();
         if(jedisPool != null) jedisPool.close();
@@ -89,11 +96,11 @@ public class DedicatedAppliedEnergisticsController {
 
     public static JedisPool jedisPool;
     public static Jedis getJedis() {
-        if(jedisPool == null) {
-            jedisPool = new JedisPool(new JedisPoolConfig(), CONFIG_VALUE_REDIS_URI.get());
-        }
+//        if(jedisPool == null) {
+//            jedisPool = new JedisPool(new JedisPoolConfig(), CONFIG_VALUE_REDIS_URI.get());
+//        }
 
-        return jedisPool.getResource();
+        return new Jedis(CONFIG_VALUE_REDIS_URI.get());
     }
 
 
@@ -115,10 +122,11 @@ public class DedicatedAppliedEnergisticsController {
     public static abstract class Controllable {
         private final List<Jedis> jedisInstances = new ArrayList<>();
         private boolean running = false;
+        private Thread internalThread;
 
         public Controllable() {
             DedicatedAppliedEnergisticsController.addControllable(this);
-            if(DedicatedAppliedEnergisticsController.IsRunning) this.externalStart();
+            if(DedicatedAppliedEnergisticsController.IsRunning && !this.isRunning()) this.externalStart();
         }
 
         protected abstract void onStart();
@@ -135,12 +143,27 @@ public class DedicatedAppliedEnergisticsController {
         }
 
         public void externalStart() {
-            this.onStart();
+            if(isRunning()) {
+                LOGGER.warn("Controllable already running!");
+                return;
+            }
+            this.internalThread = new Thread(this::onStart);
+            this.internalThread.start();
             this.running = true;
         }
 
         public void externalStop() {
+            if(!isRunning()) {
+                LOGGER.warn("Controllable already stopped!");
+                return;
+            }
             this.running = false;
+
+            if(this.internalThread != null) {
+                this.internalThread.interrupt();
+                this.internalThread = null;
+            }
+
             this.onStop();
 
             jedisInstances.forEach(Jedis::disconnect);

@@ -6,6 +6,7 @@ import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.networking.crafting.ICraftingService;
 import appeng.api.stacks.AEKey;
 import appeng.api.stacks.KeyCounter;
+import appeng.me.service.CraftingService;
 import com.mojang.logging.LogUtils;
 import net.nussi.dedicated_applied_energistics.DedicatedAppliedEnergisticsController;
 import net.nussi.dedicated_applied_energistics.blockentities.InterDimensionalInterfaceBlockEntity;
@@ -31,12 +32,13 @@ public class InterDimensionalInterfaceCrafting extends DedicatedAppliedEnergisti
 
 
         DedicatedAppliedEnergisticsController.addControllable(this);
-        if(DedicatedAppliedEnergisticsController.IsRunning) this.externalStart();
+        if(DedicatedAppliedEnergisticsController.IsRunning && !this.isRunning()) this.externalStart();
     }
 
 
     @Override
     protected void onStart() {
+        LOGGER.info(uuid + " | Starting crafting provider!");
         this.jedis = getJedis();
 
         thread = new Thread(() -> {
@@ -46,10 +48,10 @@ public class InterDimensionalInterfaceCrafting extends DedicatedAppliedEnergisti
                 if(instance.getMainNode().getGrid() == null) continue;
 
                 this.allPatterns = PatterScanner.getPatterns(instance.getMainNode().getGrid());
-                LOGGER.info(uuid + " | All patterns: " + allPatterns.size());
+                LOGGER.debug(uuid + " | All patterns: " + allPatterns.size());
 
                 // Checken auf unregister Patterns
-                LOGGER.info(uuid + " | Checking for unregister patterns");
+                LOGGER.debug(uuid + " | Checking for unregister patterns");
                 this.allPatterns.forEach(pattern -> {
                     if(!networkPatterns.isRegistered(pattern)) {
                         networkPatterns.add(new NetworkPattern(pattern, this.uuid));
@@ -58,34 +60,38 @@ public class InterDimensionalInterfaceCrafting extends DedicatedAppliedEnergisti
                 });
 
                 // Löschen von Network Pattern, wenn diese nicht mehr vorhanden sind
-                LOGGER.info(uuid + " | Deleting non existed patterns from network!");
-                NetworkPatternList temp = networkPatterns;
-                for(NetworkPattern networkPattern : temp) {
+                LOGGER.debug(uuid + " | Deleting non existed patterns from network!");
+                NetworkPatternList pendingDeletion = new NetworkPatternList();
+                for(NetworkPattern networkPattern : networkPatterns) {
                     if(!networkPattern.origin.equals(this.uuid)) {
-                        LOGGER.info(uuid + " | Skipping patter because it's not from this IDI");
+                        LOGGER.debug(uuid + " | Skipping patter because it's not from this IDI");
                         continue; // Überspringe wenn nicht von diesem IDI
                     }
                     if(allPatterns.contains(networkPattern.pattern)) {
-                        LOGGER.info(uuid + " | Skipping patter because it still exists");
+                        LOGGER.debug(uuid + " | Skipping patter because it still exists");
                         continue; // Überspringe wenn Pattern Local vorhanden
                     }
-                    networkPatterns.remove(networkPattern); // Löschen des Network Patterns
-                    LOGGER.info(uuid + " | Removed pattern from network!");
+                    pendingDeletion.add(networkPattern); // Löschen des Network Patterns
+                    LOGGER.debug(uuid + " | Pending deletion of pattern from network!");
                 }
+                pendingDeletion.forEach(pattern -> {
+                    networkPatterns.remove(pattern);
+                    LOGGER.info(uuid + " | Deleted pattern from network!");
+                });
 
                 // Updaten der Virtuellen Patterns
-                LOGGER.info(uuid + " | Updating virtual patterns!");
+                LOGGER.debug(uuid + " | Updating virtual patterns!");
                 virtualPatterns = new ArrayList<>();
                 for(NetworkPattern networkPattern : networkPatterns) {
                     if(networkPattern.origin.equals(this.uuid)) {
-                        LOGGER.info(uuid + " | Skipping patter because it's from this IDI");
+                        LOGGER.debug(uuid + " | Skipping patter because it's from this IDI");
                         continue;
                     }
                     virtualPatterns.add(networkPattern.pattern);
-                    LOGGER.info(uuid + " | Added virtual pattern!");
+                    LOGGER.debug(uuid + " | Added virtual pattern!");
                 }
 
-                LOGGER.info(uuid + " | NetworkPatterns[" + networkPatterns.size() + "]: " + Arrays.toString(networkPatterns.toArray()));
+                LOGGER.debug(uuid + " | NetworkPatterns[" + networkPatterns.size() + "]: " + Arrays.toString(networkPatterns.toArray()));
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
@@ -96,17 +102,25 @@ public class InterDimensionalInterfaceCrafting extends DedicatedAppliedEnergisti
 
         runningThread = true;
         thread.start();
+
+        LOGGER.info(uuid + " | Started crafting provider!");
     }
 
     @Override
     protected void onStop() {
+        LOGGER.info(uuid + " | Stopping crafting provider!");
         try {
             runningThread = false;
-            thread.join();
+            if(thread != null) {
+                thread.interrupt();
+                thread.join();
+                thread = null;
+            }
         } catch (Exception e) {
             LOGGER.error(e.getMessage());
             e.printStackTrace();
         }
+        LOGGER.info(uuid + " | Stopped crafting provider!");
     }
 
     @Override
