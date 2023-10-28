@@ -96,11 +96,13 @@ public class DedicatedAppliedEnergisticsController {
 
     public static JedisPool jedisPool;
     public static Jedis getJedis() {
-//        if(jedisPool == null) {
-//            jedisPool = new JedisPool(new JedisPoolConfig(), CONFIG_VALUE_REDIS_URI.get());
-//        }
+        if(jedisPool == null) {
+            jedisPool = new JedisPool(new JedisPoolConfig(), CONFIG_VALUE_REDIS_URI.get());
+        }
+        return jedisPool.getResource();
 
-        return new Jedis(CONFIG_VALUE_REDIS_URI.get());
+//        Jedis jedis = new Jedis(CONFIG_VALUE_REDIS_URI.get());
+//        return jedis;
     }
 
 
@@ -132,7 +134,7 @@ public class DedicatedAppliedEnergisticsController {
         protected abstract void onStart();
         protected abstract void onStop();
 
-        protected Jedis getJedis() {
+        public Jedis getJedis() {
             Jedis jedis = DedicatedAppliedEnergisticsController.getJedis();
             jedisInstances.add(jedis);
             return jedis;
