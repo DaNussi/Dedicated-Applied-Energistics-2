@@ -2,20 +2,17 @@ package net.nussi.dedicated_applied_energistics;
 
 import com.mojang.logging.LogUtils;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.nussi.dedicated_applied_energistics.modules.InfluxLogger;
 import net.nussi.dedicated_applied_energistics.modules.VirtualInventory;
-import net.nussi.dedicated_applied_energistics.providers.InterDimensionalInterfaceStorage;
 import org.slf4j.Logger;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
