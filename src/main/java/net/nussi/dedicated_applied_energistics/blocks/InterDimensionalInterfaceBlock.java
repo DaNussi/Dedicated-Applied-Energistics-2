@@ -9,12 +9,9 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.fml.common.Mod;
 import net.nussi.dedicated_applied_energistics.DedicatedAppliedEnegistics;
-import net.nussi.dedicated_applied_energistics.blockentities.InterDimensionalInterfaceBlockEntity;
 import net.nussi.dedicated_applied_energistics.init.BlockEntityTypeInit;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
-
-import java.util.HashMap;
 
 @Mod.EventBusSubscriber(modid = DedicatedAppliedEnegistics.MODID)
 public class InterDimensionalInterfaceBlock extends Block implements EntityBlock {
@@ -29,6 +26,5 @@ public class InterDimensionalInterfaceBlock extends Block implements EntityBlock
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return BlockEntityTypeInit.INTER_DIMENSIONAL_INTERFACE_ENTITY_TYPE.get().create(pos, state);
     }
-
 
 }
