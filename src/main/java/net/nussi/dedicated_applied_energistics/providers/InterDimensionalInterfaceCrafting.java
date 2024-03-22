@@ -20,15 +20,15 @@ public class InterDimensionalInterfaceCrafting implements ICraftingProvider {
     }
 
     public void onStart() {
-        LOGGER.info(uuid + " | Starting storage provider!");
+        LOGGER.info(uuid + " | Starting crafting provider!");
 
-        LOGGER.info(uuid + " | Started storage provider!");
+        LOGGER.info(uuid + " | Started crafting provider!");
     }
 
     public void onStop() {
-        LOGGER.info(uuid + " | Stopping storage provider!");
+        LOGGER.info(uuid + " | Stopping crafting provider!");
 
-        LOGGER.info(uuid + " | Stopped storage provider!");
+        LOGGER.info(uuid + " | Stopped crafting provider!");
     }
 
     @Override

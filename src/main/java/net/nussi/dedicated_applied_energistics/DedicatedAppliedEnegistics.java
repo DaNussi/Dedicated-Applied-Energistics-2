@@ -10,6 +10,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.nussi.dedicated_applied_energistics.init.BlockEntityTypeInit;
 import net.nussi.dedicated_applied_energistics.init.BlockInit;
 import net.nussi.dedicated_applied_energistics.init.ItemInit;
+import net.nussi.dedicated_applied_energistics.init.TabInit;
 import org.slf4j.Logger;
 
 @Mod(DedicatedAppliedEnegistics.MODID)
@@ -25,6 +26,7 @@ public class DedicatedAppliedEnegistics
         ItemInit.ITEMS.register(modEventBus);
         BlockInit.BLOCKS.register(modEventBus);
         BlockEntityTypeInit.BLOCK_ENTITY_TYPES.register(modEventBus);
+        TabInit.CREATIVE_MODE_TABS.register(modEventBus);
         modEventBus.addListener(DedicatedAppliedEnegistics::commonSetup);
 
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, DedicatedAppliedEnergisticsController.CONFIG_SPEC, "dae2-config.toml");

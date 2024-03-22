@@ -2,9 +2,10 @@ plugins {
     id 'eclipse'
     id 'maven-publish'
     id 'net.minecraftforge.gradle' version '5.1.+'
+    id 'org.spongepowered.mixin' version '0.7.+'
 }
 
-version = '1.19.2-0.0.2'
+version = '1.20.1-0.0.2'
 group = 'net.nussi.dae2' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'dae2'
 
@@ -30,7 +31,7 @@ minecraft {
     //
     // Use non-default mappings at your own risk. They may not always work.
     // Simply re-run your setup task after changing the mappings to update your workspace.
-    mappings channel: 'official', version: '1.19.2'
+    mappings channel: 'official', version: '1.20.1'
 
     // accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg') // Currently, this location cannot be changed from the default.
 
@@ -161,7 +162,7 @@ dependencies {
     // Specify the version of Minecraft to use. If this is any group other than 'net.minecraft', it is assumed
     // that the dep is a ForgeGradle 'patcher' dependency, and its patches will be applied.
     // The userdev artifact is a special name and will get all sorts of transformations applied to it.
-    minecraft 'net.minecraftforge:forge:1.19.2-43.2.11'
+    minecraft 'net.minecraftforge:forge:1.20.1-47.2.20'
 
 
 
@@ -174,8 +175,8 @@ dependencies {
 
     // AE2
 //    implementation files('libs/appliedenergistics2-forge-12.9.5-api.jar')
-    implementation(fg.deobf("appeng:appliedenergistics2-forge:12.9.4:api"))
-    implementation(fg.deobf("appeng:appliedenergistics2-forge:12.9.4"))
+    implementation(fg.deobf("appeng:appliedenergistics2-forge:15.0.23:api"))
+    implementation(fg.deobf("appeng:appliedenergistics2-forge:15.0.23"))
 
     // REDIS DB
 //    minecraftLibrary  jarJar('redis.clients:jedis:3.6.0')
