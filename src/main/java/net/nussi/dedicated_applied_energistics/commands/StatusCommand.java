@@ -1,6 +1,5 @@
 package net.nussi.dedicated_applied_energistics.commands;
 
-import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.logging.LogUtils;
 import net.minecraft.commands.CommandSourceStack;
@@ -22,10 +21,7 @@ public class StatusCommand implements Command {
 
     private static int status(CommandSourceStack commandSourceStack) {
         commandSourceStack.sendSystemMessage(Component.literal(
-                "IsRunning: " + DedicatedAppliedEnergisticsController.IsRunning + "\n" +
-                        "Redis URI: " + DedicatedAppliedEnergisticsController.CONFIG_VALUE_REDIS_URI.get() + "\n" +
-                        "Autostart: " + DedicatedAppliedEnergisticsController.CONFIG_VALUE_BEHAVIOUR_AUTOSTART.get() + "\n" +
-                        "VirtualInventory: " + DedicatedAppliedEnergisticsController.CONFIG_VALUE_BEHAVIOUR_VIRTUAL_INVENTORY.get() + ""
+                        "Autostart: " + DedicatedAppliedEnergisticsController.CONFIG_VALUE_BEHAVIOUR_AUTOSTART.get() + ""
         ));
         return 1;
     }

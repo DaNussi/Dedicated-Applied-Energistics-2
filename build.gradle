@@ -179,9 +179,9 @@ dependencies {
 
     // REDIS DB
 //    minecraftLibrary  jarJar('redis.clients:jedis:3.6.0')
-    minecraftLibrary jarJar(group: 'redis.clients', name: 'jedis', version: '[3.6.0,)')
+//    minecraftLibrary jarJar(group: 'redis.clients', name: 'jedis', version: '[3.6.0,)')
 //    minecraftLibrary  jarJar('org.apache.commons:commons-pool2:2.11.1')
-    minecraftLibrary jarJar(group: 'org.apache.commons', name: 'commons-pool2', version: '[2.11.1,)')
+//    minecraftLibrary jarJar(group: 'org.apache.commons', name: 'commons-pool2', version: '[2.11.1,)')
 
     // For more info...
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
