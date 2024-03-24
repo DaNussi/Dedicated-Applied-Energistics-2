@@ -50,32 +50,6 @@ public class InterDimensionalInterfaceStorage implements IStorageProvider, MESto
         boolean success = connectDatabase();
         if(!success) return;
 
-        try {
-            var nodes = instance.getGridNode().getGrid().getNodes();
-
-
-            int i = 0;
-            for(var node : nodes) {
-                LOGGER.info(uuid + " | Found " + i++ + " " + node.getVisualRepresentation().toString());
-                try {
-                    KeyCounter itemKeys = new KeyCounter();
-                    IStorageProvider provider = node.getService(IStorageProvider.class);
-                    IStorageMounts mounts = (inventory, priority) -> {
-                        inventory.getAvailableStacks(itemKeys);
-                    };
-                    provider.mountInventories(mounts);
-
-                    LOGGER.info(uuid + " | Found items " + itemKeys);
-
-                } catch (Exception e) {
-                    LOGGER.info(uuid + " | Failed to index node");
-                    e.printStackTrace();
-                }
-            }
-        } catch (Exception e) {
-            LOGGER.info(uuid + " | Failed to get nodes");
-            e.printStackTrace();
-        }
 
         LOGGER.info(uuid + " | Started storage provider");
     }
