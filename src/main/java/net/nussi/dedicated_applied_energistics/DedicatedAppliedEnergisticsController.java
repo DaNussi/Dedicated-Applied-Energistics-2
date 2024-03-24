@@ -14,19 +14,18 @@ public class DedicatedAppliedEnergisticsController {
     public static ForgeConfigSpec.Builder CONFIG_BUILDER = new ForgeConfigSpec.Builder();
     public static ForgeConfigSpec CONFIG_SPEC;
 
+    public static ForgeConfigSpec.ConfigValue<String> CONFIG_VALUE_RABBITMQ_URI;
     public static ForgeConfigSpec.ConfigValue<String> CONFIG_VALUE_REDIS_URI;
+
     public static ForgeConfigSpec.ConfigValue<Boolean> CONFIG_VALUE_BEHAVIOUR_AUTOSTART;
-    public static ForgeConfigSpec.ConfigValue<Boolean> CONFIG_VALUE_BEHAVIOUR_VIRTUAL_INVENTORY;
-    public static ForgeConfigSpec.ConfigValue<Boolean> CONFIG_VALUE_BEHAVIOUR_INFLUXDB_LOGGER;
 
     static {
         CONFIG_BUILDER.push("Config for DAE2!");
 
-        CONFIG_VALUE_REDIS_URI = CONFIG_BUILDER.define("REDIS_URI", "redis://localhost:6379");
+        CONFIG_VALUE_RABBITMQ_URI = CONFIG_BUILDER.define("RABBITMQ_URI", "amqp://guest:guest@localhost:5672/");
+        CONFIG_VALUE_REDIS_URI = CONFIG_BUILDER.define("REDIS_URI", "redis://localhost:6379/");
 
         CONFIG_VALUE_BEHAVIOUR_AUTOSTART = CONFIG_BUILDER.define("BEHAVIOUR_AUTOSTART", false);
-        CONFIG_VALUE_BEHAVIOUR_VIRTUAL_INVENTORY = CONFIG_BUILDER.define("BEHAVIOUR_VIRTUAL_INVENTORY", false);
-        CONFIG_VALUE_BEHAVIOUR_INFLUXDB_LOGGER = CONFIG_BUILDER.define("BEHAVIOUR_INFLUXDB_LOGGER", false);
 
         CONFIG_BUILDER.pop();
         CONFIG_SPEC = CONFIG_BUILDER.build();

@@ -31,6 +31,7 @@ public class InterDimensionalInterfaceCrafting implements ICraftingProvider {
         LOGGER.info(uuid + " | Stopped crafting provider!");
     }
 
+
     @Override
     public List<IPatternDetails> getAvailablePatterns() {
         return Collections.emptyList();
