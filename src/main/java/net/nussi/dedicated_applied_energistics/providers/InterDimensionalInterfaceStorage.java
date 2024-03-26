@@ -1,14 +1,24 @@
 package net.nussi.dedicated_applied_energistics.providers;
 
+import appeng.api.config.Actionable;
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.IGridNodeListener;
+import appeng.api.networking.security.IActionSource;
 import appeng.api.networking.ticking.IGridTickable;
 import appeng.api.networking.ticking.TickRateModulation;
 import appeng.api.networking.ticking.TickingRequest;
+import appeng.api.stacks.AEItemKey;
 import appeng.api.storage.IStorageMounts;
 import appeng.api.storage.IStorageProvider;
+import appeng.api.storage.MEStorage;
+import appeng.api.storage.cells.StorageCell;
+import appeng.blockentity.inventory.AppEngCellInventory;
+import appeng.blockentity.storage.DriveBlockEntity;
+import appeng.core.definitions.AEItems;
+import appeng.me.storage.DriveWatcher;
 import com.mojang.logging.LogUtils;
 import com.rabbitmq.client.Channel;
+import net.minecraft.world.item.Item;
 import net.nussi.dedicated_applied_energistics.blockentities.InterDimensionalInterfaceBlockEntity;
 import org.slf4j.Logger;
 import redis.clients.jedis.Jedis;
@@ -66,14 +76,19 @@ public class InterDimensionalInterfaceStorage implements IStorageProvider, IGrid
     AtomicLong lastGridIndex = new AtomicLong(0);
     AtomicBoolean busyGridIndex = new AtomicBoolean(false);
     public void indexGrid() {
-        if (busyGridIndex.get()) {
-            LOGGER.warn(instance.getUuid() + " | Skipping indexing of grid because it's already running");
-            return;
-        }
-        busyGridIndex.set(true);
+//        if(busyGridIndex.get() && System.currentTimeMillis() - lastGridIndex.get() > 2000) {
+//            busyGridIndex.set(false);
+//            LOGGER.warn(instance.getUuid() + " | Unstuck grid indexing");
+//        }
+//
+//        if (busyGridIndex.get()) {
+////            LOGGER.warn(instance.getUuid() + " | Skipping indexing of grid because it's already running");
+//            return;
+//        }
+//        busyGridIndex.set(true);
 
         if (System.currentTimeMillis() - lastGridIndex.get() < 900) {
-            LOGGER.warn(instance.getUuid() + " | Skipping indexing of grid because of cooldown");
+//            LOGGER.warn(instance.getUuid() + " | Skipping indexing of grid because of cooldown");
             return;
         }
 
@@ -94,20 +109,35 @@ public class InterDimensionalInterfaceStorage implements IStorageProvider, IGrid
             return;
         }
 
+        LOGGER.info(instance.getUuid() + " | Indexing grid!");
 //        LOGGER.info(instance.getUuid() + " | Machine Classe: " + instance.getMainNode().getGrid().getMachineClasses().toString());
 
-        List<IStorageProvider> storageProviders = new ArrayList<>();
+        List<MEStorage> storageCells = new ArrayList<>();
 
         for (Class<?> machineClasses : grid.getMachineClasses()) {
             var machines = grid.getMachines(machineClasses);
             for (var machine : machines) {
-                if (machine instanceof IStorageProvider storageProvider)
-                    storageProviders.add(storageProvider);
+                if (machine instanceof IStorageProvider storageProvider) {
+                    storageProvider.mountInventories((inventory, priority) -> {
+                        storageCells.add(inventory);
+                    });
+                }
+//                if (machine instanceof DriveBlockEntity driveBlock) {
+//                    for (int i = 0; i < driveBlock.getCellCount(); i++) {
+//                        DriveWatcher driveWatcher = (DriveWatcher) driveBlock.getCellInventory(i);
+//                        if(driveWatcher != null) {
+//                            StorageCell storageCell = driveWatcher.getCell();
+//                            storageCells.add(storageCell);
+//                        } else {
+////                            LOGGER.warn("Skipping StorageCell because it's null");
+//                        }
+//                    }
+//                }
             }
         }
 
-//        LOGGER.info(instance.getUuid() + " | Found " + storageProviders.size() + " storages");
-        updateVirtualHosts(storageProviders);
+//        LOGGER.info(instance.getUuid() + " | Found " + storageCells.size() + " storages");
+        updateVirtualHosts(storageCells);
 
 
 
@@ -135,17 +165,19 @@ public class InterDimensionalInterfaceStorage implements IStorageProvider, IGrid
         IStorageProvider.requestUpdate(instance.getMainNode());
 
 
+        for(VirtualDiskHost host : diskHosts) {
+            host.storage.insert(AEItemKey.of(AEItems.ITEM_CELL_256K.stack()), 1, Actionable.MODULATE, IActionSource.ofMachine(instance));
+        }
+
         lastGridIndex.set(System.currentTimeMillis());
         busyGridIndex.set(false);
     }
 
-    private void updateVirtualHosts(List<IStorageProvider> storageProviders) {
+    private void updateVirtualHosts(List<MEStorage> storageCells) {
         List<VirtualDiskHost> hosts = new ArrayList<>();
 
-        for (var provider : storageProviders) {
-            provider.mountInventories((inventory, priority) -> {
-                hosts.add(new VirtualDiskHost(inventory, priority, instance));
-            });
+        for (MEStorage storageCell : storageCells) {
+            hosts.add(new VirtualDiskHost(storageCell, 0, instance));
         }
 
         // REMOVE HOST IF IT DOSEN'T EXIST ANYMORE
@@ -203,12 +235,17 @@ public class InterDimensionalInterfaceStorage implements IStorageProvider, IGrid
 
     @Override
     public TickingRequest getTickingRequest(IGridNode node) {
-        return new TickingRequest(20, 20, false, false);
+
+        return new TickingRequest(1, 1, false, false);
     }
 
     @Override
     public TickRateModulation tickingRequest(IGridNode node, int ticksSinceLastCall) {
         indexGrid();
+
+        for (var diskHost : diskHosts.stream().toList()) {
+            diskHost.onTick();
+        }
 
         return TickRateModulation.SAME;
     }

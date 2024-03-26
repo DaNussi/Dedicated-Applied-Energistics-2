@@ -3,6 +3,8 @@ package net.nussi.dedicated_applied_energistics.blockentities;
 import appeng.api.networking.GridFlags;
 import appeng.api.networking.IGridNodeListener;
 import appeng.api.networking.crafting.ICraftingProvider;
+import appeng.api.networking.energy.IEnergyService;
+import appeng.api.networking.energy.IEnergySource;
 import appeng.api.networking.ticking.IGridTickable;
 import appeng.api.orientation.BlockOrientation;
 import appeng.api.stacks.AEItemKey;
@@ -63,7 +65,6 @@ public class InterDimensionalInterfaceBlockEntity extends AENetworkBlockEntity {
 
         this.crafting = new InterDimensionalInterfaceCrafting(this);
         this.getMainNode().addService(ICraftingProvider.class, this.crafting);
-
 
         registerBlockEntity(this, pos);
     }

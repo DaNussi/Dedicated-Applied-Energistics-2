@@ -12,8 +12,6 @@ import net.nussi.dedicated_applied_energistics.blockentities.InterDimensionalInt
 import org.slf4j.Logger;
 import redis.clients.jedis.Jedis;
 
-import java.io.IOException;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -92,33 +90,40 @@ public class VirtualDiskClient implements MEStorage {
     @Override
     public long insert(AEKey what, long amount, Actionable mode, IActionSource source) {
         try {
-            String corrId = UUID.randomUUID().toString();
+            VirtualDiskAction.InsertRequest action = new VirtualDiskAction.InsertRequest(what, amount, mode);
+
             String replyQueueName = rabbitmq.queueDeclare().getQueue();
-            AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().correlationId(corrId).replyTo(replyQueueName).build();
+            AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().correlationId(action.getId()).replyTo(replyQueueName).build();
 
 
 
             CompletableFuture<VirtualDiskAction.InsertResponse> responseFuture = new CompletableFuture<>();
-            responseFuture.completeOnTimeout(new VirtualDiskAction.InsertResponse("",false,0), 2, TimeUnit.SECONDS);
+            responseFuture.completeOnTimeout(new VirtualDiskAction.InsertResponse("",false,0), 5, TimeUnit.SECONDS);
             DeliverCallback insertCallback = ((consumerTag, delivery) -> {
-                if(!delivery.getProperties().getCorrelationId().equals(corrId)) return;
-                VirtualDiskAction.InsertResponse response = new VirtualDiskAction.InsertResponse(delivery.getBody());
-                LOGGER.info("Callback for insert action " + response);
+                if(!delivery.getProperties().getCorrelationId().equals(action.getId())) return;
+                VirtualDiskAction.InsertResponse response = new VirtualDiskAction.InsertResponse(action.getId(), false, 0);
+                try {
+                    response =  new VirtualDiskAction.InsertResponse(delivery.getBody());
+                } catch (Exception e) {
+                    LOGGER.error("Failed to pares response");
+                    e.printStackTrace();
+                }
                 responseFuture.complete(response);
             });
 
             String ctag = rabbitmq.basicConsume(replyQueueName, true, insertCallback, consumerTag -> {});
 
-            VirtualDiskAction.Insert action = new VirtualDiskAction.Insert(what, amount, mode);
             LOGGER.info("Calling insert action " + action);
-            rabbitmq.basicPublish("", channel + "/insert", props, action.getData());
+            rabbitmq.basicPublish("", channel + "/insert", props, action.toBytes());
 
             VirtualDiskAction.InsertResponse response = responseFuture.get();
             rabbitmq.basicCancel(ctag);
-            if (response.success) {
+            LOGGER.info("Callback for insert action " + response);
+            if (response.isSuccess()) {
                 return response.data;
             } else {
-                throw new Exception("Request not successful");
+                LOGGER.error("Request was unsuccessful " + response);
+                return 0;
             }
 
         } catch (Exception e) {
