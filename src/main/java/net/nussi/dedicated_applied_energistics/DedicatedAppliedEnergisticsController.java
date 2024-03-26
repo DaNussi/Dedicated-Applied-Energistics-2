@@ -8,6 +8,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.slf4j.Logger;
 
+import java.util.UUID;
+
 @Mod.EventBusSubscriber(modid = DedicatedAppliedEnegistics.MODID)
 public class DedicatedAppliedEnergisticsController {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -16,6 +18,7 @@ public class DedicatedAppliedEnergisticsController {
 
     public static ForgeConfigSpec.ConfigValue<String> CONFIG_VALUE_RABBITMQ_URI;
     public static ForgeConfigSpec.ConfigValue<String> CONFIG_VALUE_REDIS_URI;
+    public static ForgeConfigSpec.ConfigValue<String> CONFIG_VALUE_HOST_ID;
 
     public static ForgeConfigSpec.ConfigValue<Boolean> CONFIG_VALUE_BEHAVIOUR_AUTOSTART;
 
@@ -24,6 +27,7 @@ public class DedicatedAppliedEnergisticsController {
 
         CONFIG_VALUE_RABBITMQ_URI = CONFIG_BUILDER.define("RABBITMQ_URI", "amqp://guest:guest@localhost:5672/");
         CONFIG_VALUE_REDIS_URI = CONFIG_BUILDER.define("REDIS_URI", "redis://localhost:6379/");
+        CONFIG_VALUE_HOST_ID = CONFIG_BUILDER.define("HOST_ID", UUID.randomUUID().toString());
 
         CONFIG_VALUE_BEHAVIOUR_AUTOSTART = CONFIG_BUILDER.define("BEHAVIOUR_AUTOSTART", false);
 
