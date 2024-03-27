@@ -31,7 +31,6 @@ public class VirtualDiskHost {
     private InterDimensionalInterfaceBlockEntity instance;
 
     private Jedis redis;
-    private Channel rabbitmq;
     private String channel;
 
     public MEStorage storage;
@@ -52,9 +51,7 @@ public class VirtualDiskHost {
 
     public void onStart() {
         this.redis = instance.getRedis();
-        this.rabbitmq = instance.getRabbitmq();
 
-        this.initRabbitMQ();
         this.updateRedis();
 
         LOGGER.warn("Started virtual drive host " + channel);
@@ -63,107 +60,6 @@ public class VirtualDiskHost {
     public void onStop() {
         this.removeRedis();
         LOGGER.warn("Stopped virtual drive host " + channel);
-    }
-
-    private void initRabbitMQ() {
-        try {
-            rabbitmq.queueDeclare(channel + "/insert", false, false, false, null);
-            rabbitmq.queueDeclare(channel + "/extract", false, false, false, null);
-            rabbitmq.queueDeclare(channel + "/isPreferredStorageFor", false, false, false, null);
-            rabbitmq.queueDeclare(channel + "/getAvailableStacks", false, false, false, null);
-            rabbitmq.queueDeclare(channel + "/getDescription", false, false, false, null);
-
-
-            DeliverCallback insertCallback = ((consumerTag, delivery) -> {
-                var response = new InsertResponse(delivery.getProperties().getCorrelationId(), false, 0);
-                try {
-                    var request = new InsertRequest(delivery.getBody());
-//                    LOGGER.info("Incomming request " + request);
-                    var pair = new InsertPair(request);
-                    var callback = pair.getResponseFuture();
-                    insertQueue.add(pair);
-                    response = callback.get();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-//                LOGGER.info("Outgoin response " + response);
-
-                AMQP.BasicProperties replyProps = new AMQP.BasicProperties.Builder().correlationId(delivery.getProperties().getCorrelationId()).build();
-                rabbitmq.basicPublish("", delivery.getProperties().getReplyTo(), replyProps, response.toBytes());
-                rabbitmq.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-            });
-            rabbitmq.basicConsume(channel + "/insert", false, insertCallback, (consumerTag -> {
-            }));
-
-
-            DeliverCallback extractCallback = ((consumerTag, delivery) -> {
-                var response = new ExtractResponse(delivery.getProperties().getCorrelationId(), false, 0);
-                try {
-                    var request = new ExtractRequest(delivery.getBody());
-//                    LOGGER.info("Incomming request " + request);
-                    var pair = new ExtractPair(request);
-                    var callback = pair.getResponseFuture();
-                    extractQueue.add(pair);
-                    response = callback.get();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-//                LOGGER.info("Outgoin response " + response);
-
-                AMQP.BasicProperties replyProps = new AMQP.BasicProperties.Builder().correlationId(delivery.getProperties().getCorrelationId()).build();
-                rabbitmq.basicPublish("", delivery.getProperties().getReplyTo(), replyProps, response.toBytes());
-                rabbitmq.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-            });
-            rabbitmq.basicConsume(channel + "/extract", false, extractCallback, (consumerTag -> {
-            }));
-
-
-            DeliverCallback availableStacksCallback = ((consumerTag, delivery) -> {
-                var response = new AvailableStacksResponse(delivery.getProperties().getCorrelationId(), false);
-                try {
-                    var request = new AvailableStacksRequest(delivery.getBody());
-//                    LOGGER.info("Incomming request " + request);
-                    var pair = new AvailableStacksPair(request);
-                    var callback = pair.getResponseFuture();
-                    availableStacksQueue.add(pair);
-                    response = callback.get();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-//                LOGGER.info("Outgoin response " + response);
-
-                AMQP.BasicProperties replyProps = new AMQP.BasicProperties.Builder().correlationId(delivery.getProperties().getCorrelationId()).build();
-                rabbitmq.basicPublish("", delivery.getProperties().getReplyTo(), replyProps, response.toBytes());
-                rabbitmq.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-            });
-            rabbitmq.basicConsume(channel + "/getAvailableStacks", false, availableStacksCallback, (consumerTag -> {}));
-
-
-            DeliverCallback descriptionCallback = ((consumerTag, delivery) -> {
-                var response = new DescriptionResponse(delivery.getProperties().getCorrelationId(), false, "");
-                try {
-                    var request = new DescriptionRequest(delivery.getBody());
-//                    LOGGER.info("Incomming request " + request);
-                    var pair = new DescriptionPair(request);
-                    var callback = pair.getResponseFuture();
-                    descriptionQueue.add(pair);
-                    response = callback.get();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-//                LOGGER.info("Outgoin response " + response);
-
-                AMQP.BasicProperties replyProps = new AMQP.BasicProperties.Builder().correlationId(delivery.getProperties().getCorrelationId()).build();
-                rabbitmq.basicPublish("", delivery.getProperties().getReplyTo(), replyProps, response.toBytes());
-                rabbitmq.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-            });
-            rabbitmq.basicConsume(channel + "/getDescription", false, descriptionCallback, (consumerTag -> {
-            }));
-
-        } catch (Exception e) {
-            LOGGER.warn("Failed to declare rabbit mq queue for " + channel);
-            e.printStackTrace();
-        }
     }
 
     private void updateRedis() {

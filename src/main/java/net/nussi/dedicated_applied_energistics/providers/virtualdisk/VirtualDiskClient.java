@@ -48,12 +48,6 @@ public class VirtualDiskClient implements MEStorage {
             return;
         }
 
-        boolean initRabbitMqSuccess = initRabbitmq();
-        if (!initRabbitMqSuccess) {
-            onStop();
-            return;
-        }
-
         LOGGER.warn("Started virtual drive client " + channel);
     }
 
@@ -71,10 +65,6 @@ public class VirtualDiskClient implements MEStorage {
             LOGGER.error("Failed to fetch VirtualDiskClient info for " + channel);
             return false;
         }
-    }
-
-    private boolean initRabbitmq() {
-        return true;
     }
 
 
@@ -97,176 +87,21 @@ public class VirtualDiskClient implements MEStorage {
 
     @Override
     public long insert(AEKey what, long amount, Actionable mode, IActionSource source) {
-        try {
-            InsertRequest action = new InsertRequest(what, amount, mode);
-
-            String replyQueueName = rabbitmq.queueDeclare().getQueue();
-            AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().correlationId(action.getId()).replyTo(replyQueueName).build();
-
-
-            CompletableFuture<InsertResponse> responseFuture = new CompletableFuture<>();
-            responseFuture.completeOnTimeout(new InsertResponse("", false, 0), 5, TimeUnit.SECONDS);
-            DeliverCallback insertCallback = ((consumerTag, delivery) -> {
-                if (!delivery.getProperties().getCorrelationId().equals(action.getId())) return;
-                InsertResponse response = new InsertResponse(action.getId(), false, 0);
-                try {
-                    response = new InsertResponse(delivery.getBody());
-                } catch (Exception e) {
-                    LOGGER.error("Failed to pares response");
-                    e.printStackTrace();
-                }
-                responseFuture.complete(response);
-            });
-
-            String ctag = rabbitmq.basicConsume(replyQueueName, true, insertCallback, consumerTag -> {});
-
-//            LOGGER.info("Calling action " + action);
-            rabbitmq.basicPublish("", channel + "/insert", props, action.toBytes());
-
-            InsertResponse response = responseFuture.get();
-            rabbitmq.basicCancel(ctag);
-//            LOGGER.info("Callback for action " + response);
-            if (response.isSuccess()) {
-                return response.data;
-            } else {
-                LOGGER.error("Request was unsuccessful " + response);
-                return 0;
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return 0;
-        }
+        return 0;
     }
 
     @Override
     public long extract(AEKey what, long amount, Actionable mode, IActionSource source) {
-        try {
-            ExtractRequest action = new ExtractRequest(what, amount, mode);
-
-            String replyQueueName = rabbitmq.queueDeclare().getQueue();
-            AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().correlationId(action.getId()).replyTo(replyQueueName).build();
-
-            CompletableFuture<ExtractResponse> responseFuture = new CompletableFuture<>();
-            responseFuture.completeOnTimeout(new ExtractResponse("", false, 0), 5, TimeUnit.SECONDS);
-            DeliverCallback insertCallback = ((consumerTag, delivery) -> {
-                if (!delivery.getProperties().getCorrelationId().equals(action.getId())) return;
-                ExtractResponse response = new ExtractResponse(action.getId(), false, 0);
-                try {
-                    response = new ExtractResponse(delivery.getBody());
-                } catch (Exception e) {
-                    LOGGER.error("Failed to pares response");
-                    e.printStackTrace();
-                }
-                responseFuture.complete(response);
-            });
-
-            String ctag = rabbitmq.basicConsume(replyQueueName, true, insertCallback, consumerTag -> {
-            });
-
-//            LOGGER.info("Calling action " + action);
-            rabbitmq.basicPublish("", channel + "/extract", props, action.toBytes());
-
-            ExtractResponse response = responseFuture.get();
-            rabbitmq.basicCancel(ctag);
-//            LOGGER.info("Callback for action " + response);
-            if (response.isSuccess()) {
-                return response.data;
-            } else {
-                LOGGER.error("Request was unsuccessful " + response);
-                return 0;
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return 0;
-        }
+        return 0;
     }
 
     @Override
     public void getAvailableStacks(KeyCounter out) {
-        try {
-            AvailableStacksRequest action = new AvailableStacksRequest();
 
-            String replyQueueName = rabbitmq.queueDeclare().getQueue();
-            AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().correlationId(action.getId()).replyTo(replyQueueName).build();
-
-            CompletableFuture<AvailableStacksResponse> responseFuture = new CompletableFuture<>();
-            responseFuture.completeOnTimeout(new AvailableStacksResponse("", false), 5, TimeUnit.SECONDS);
-            DeliverCallback insertCallback = ((consumerTag, delivery) -> {
-                if (!delivery.getProperties().getCorrelationId().equals(action.getId())) return;
-                try {
-                    AvailableStacksResponse response = new AvailableStacksResponse(delivery.getBody());
-                    responseFuture.complete(response);
-                } catch (Exception e) {
-                    LOGGER.error("Failed to pares response");
-                    e.printStackTrace();
-                    AvailableStacksResponse response = new AvailableStacksResponse(action.getId(), false);
-                    responseFuture.complete(response);
-                }
-            });
-
-            String ctag = rabbitmq.basicConsume(replyQueueName, true, insertCallback, consumerTag -> {
-            });
-
-//            LOGGER.info("Calling action " + action);
-            rabbitmq.basicPublish("", channel + "/getAvailableStacks", props, action.toBytes());
-
-            AvailableStacksResponse response = responseFuture.get();
-            rabbitmq.basicCancel(ctag);
-//            LOGGER.info("Callback for action " + response);
-            if (response.isSuccess()) {
-                response.getAvailableStacks(out);
-            } else {
-                LOGGER.error("Request was unsuccessful " + response);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     @Override
     public Component getDescription() {
-        try {
-            DescriptionRequest action = new DescriptionRequest();
-
-            String replyQueueName = rabbitmq.queueDeclare().getQueue();
-            AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().correlationId(action.getId()).replyTo(replyQueueName).build();
-
-            CompletableFuture<DescriptionResponse> responseFuture = new CompletableFuture<>();
-            responseFuture.completeOnTimeout(new DescriptionResponse("", false, ""), 5, TimeUnit.SECONDS);
-            DeliverCallback insertCallback = ((consumerTag, delivery) -> {
-                if (!delivery.getProperties().getCorrelationId().equals(action.getId())) return;
-                DescriptionResponse response = new DescriptionResponse(action.getId(), false, "");
-                try {
-                    response = new DescriptionResponse(delivery.getBody());
-                } catch (Exception e) {
-                    LOGGER.error("Failed to pares response");
-                    e.printStackTrace();
-                }
-                responseFuture.complete(response);
-            });
-
-            String ctag = rabbitmq.basicConsume(replyQueueName, true, insertCallback, consumerTag -> {
-            });
-
-//            LOGGER.info("Calling action " + action);
-            rabbitmq.basicPublish("", channel + "/extract", props, action.toBytes());
-
-            DescriptionResponse response = responseFuture.get();
-            rabbitmq.basicCancel(ctag);
-//            LOGGER.info("Callback for action " + response);
-            if (response.isSuccess()) {
-                return Component.literal(response.getDescription());
-            } else {
-                LOGGER.error("Request was unsuccessful " + response);
-                return Component.literal("DAE2 encountered an error!");
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Component.literal("DAE2 encountered an error!");
-        }
+        return Component.literal("DAE2 encountered an error!");
     }
 }
