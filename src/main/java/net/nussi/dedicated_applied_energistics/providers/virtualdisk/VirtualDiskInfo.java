@@ -1,4 +1,4 @@
-package net.nussi.dedicated_applied_energistics.providers;
+package net.nussi.dedicated_applied_energistics.providers.virtualdisk;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;

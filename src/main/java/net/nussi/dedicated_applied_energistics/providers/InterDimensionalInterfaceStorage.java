@@ -11,15 +11,13 @@ import appeng.api.stacks.AEItemKey;
 import appeng.api.storage.IStorageMounts;
 import appeng.api.storage.IStorageProvider;
 import appeng.api.storage.MEStorage;
-import appeng.api.storage.cells.StorageCell;
-import appeng.blockentity.inventory.AppEngCellInventory;
-import appeng.blockentity.storage.DriveBlockEntity;
 import appeng.core.definitions.AEItems;
-import appeng.me.storage.DriveWatcher;
 import com.mojang.logging.LogUtils;
 import com.rabbitmq.client.Channel;
-import net.minecraft.world.item.Item;
 import net.nussi.dedicated_applied_energistics.blockentities.InterDimensionalInterfaceBlockEntity;
+import net.nussi.dedicated_applied_energistics.providers.virtualdisk.VirtualDiskClient;
+import net.nussi.dedicated_applied_energistics.providers.virtualdisk.VirtualDiskHost;
+import net.nussi.dedicated_applied_energistics.providers.virtualdisk.VirtualDiskInfo;
 import org.slf4j.Logger;
 import redis.clients.jedis.Jedis;
 
@@ -109,7 +107,7 @@ public class InterDimensionalInterfaceStorage implements IStorageProvider, IGrid
             return;
         }
 
-        LOGGER.info(instance.getUuid() + " | Indexing grid!");
+//        LOGGER.info(instance.getUuid() + " | Indexing grid!");
 //        LOGGER.info(instance.getUuid() + " | Machine Classe: " + instance.getMainNode().getGrid().getMachineClasses().toString());
 
         List<MEStorage> storageCells = new ArrayList<>();
