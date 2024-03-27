@@ -11,9 +11,8 @@ public class PreferredStorageRequest extends Request {
         this.data = data;
     }
 
-    public PreferredStorageRequest(byte[] bytes, AEKey data) throws Exception {
+    public PreferredStorageRequest(byte[] bytes) throws Exception {
         super(bytes);
-        this.data = data;
     }
 
     @Override

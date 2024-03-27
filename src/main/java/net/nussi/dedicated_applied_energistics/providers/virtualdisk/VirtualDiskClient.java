@@ -77,7 +77,6 @@ public class VirtualDiskClient implements MEStorage {
         return true;
     }
 
-
     public String getChannel() {
         return channel;
     }
