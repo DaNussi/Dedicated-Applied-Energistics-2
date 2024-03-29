@@ -45,6 +45,7 @@ public class VirtualDiskHost {
     private final Queue<ExtractPair> extractQueue = new LinkedList<>();
     private final Queue<AvailableStacksPair> availableStacksQueue = new LinkedList<>();
     private final Queue<DescriptionPair> descriptionQueue = new LinkedList<>();
+    private final Queue<PreferredStoragePair> preferredStorageQueue = new LinkedList<>();
 
     public VirtualDiskHost(MEStorage storage, int priority, InterDimensionalInterfaceBlockEntity instance) {
         this.storage = storage;
