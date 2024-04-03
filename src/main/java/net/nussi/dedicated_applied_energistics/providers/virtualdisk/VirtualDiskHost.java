@@ -1,11 +1,15 @@
 package net.nussi.dedicated_applied_energistics.providers.virtualdisk;
 
+import appeng.api.config.Actionable;
 import appeng.api.networking.security.IActionSource;
+import appeng.api.stacks.AEItemKey;
 import appeng.api.storage.MEStorage;
+import appeng.core.definitions.AEItems;
 import com.mojang.logging.LogUtils;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DeliverCallback;
+import net.nussi.dedicated_applied_energistics.DedicatedAppliedEnegistics;
 import net.nussi.dedicated_applied_energistics.blockentities.InterDimensionalInterfaceBlockEntity;
 import net.nussi.dedicated_applied_energistics.misc.RedisHelper;
 import net.nussi.dedicated_applied_energistics.providers.virtualdisk.actions.availablestacks.AvailableStacksPair;
@@ -23,6 +27,9 @@ import net.nussi.dedicated_applied_energistics.providers.virtualdisk.actions.ins
 import net.nussi.dedicated_applied_energistics.providers.virtualdisk.actions.preferredstorage.PreferredStoragePair;
 import net.nussi.dedicated_applied_energistics.providers.virtualdisk.actions.preferredstorage.PreferredStorageRequest;
 import net.nussi.dedicated_applied_energistics.providers.virtualdisk.actions.preferredstorage.PreferredStorageResponse;
+import net.nussi.dedicated_applied_energistics.websockets.WebsocketConverter;
+import net.nussi.dedicated_applied_energistics.websockets.WebsocketListener;
+import net.nussi.dedicated_applied_energistics.websockets.WebsocketPaket;
 import org.slf4j.Logger;
 import redis.clients.jedis.Jedis;
 
@@ -34,7 +41,6 @@ public class VirtualDiskHost {
     private InterDimensionalInterfaceBlockEntity instance;
 
     private Jedis redis;
-    private Channel rabbitmq;
     private String channel;
 
     public MEStorage storage;
@@ -58,6 +64,7 @@ public class VirtualDiskHost {
         this.redis = instance.getRedis();
 
         this.updateRedis();
+        this.initWebsocket();
 
         LOGGER.warn("Started virtual drive host " + channel);
     }
@@ -65,127 +72,6 @@ public class VirtualDiskHost {
     public void onStop() {
         this.removeRedis();
         LOGGER.warn("Stopped virtual drive host " + channel);
-    }
-
-    private void initRabbitMQ() {
-        try {
-            rabbitmq.queueDeclare(channel + "/insert", false, false, false, null);
-            rabbitmq.queueDeclare(channel + "/extract", false, false, false, null);
-            rabbitmq.queueDeclare(channel + "/isPreferredStorageFor", false, false, false, null);
-            rabbitmq.queueDeclare(channel + "/getAvailableStacks", false, false, false, null);
-            rabbitmq.queueDeclare(channel + "/getDescription", false, false, false, null);
-
-
-            DeliverCallback insertCallback = ((consumerTag, delivery) -> {
-                var response = new InsertResponse(delivery.getProperties().getCorrelationId(), false, 0);
-                try {
-                    var request = new InsertRequest(delivery.getBody());
-//                    LOGGER.info("Incomming request " + request);
-                    var pair = new InsertPair(request);
-                    var callback = pair.getResponseFuture();
-                    insertQueue.add(pair);
-                    response = callback.get();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-//                LOGGER.info("Outgoin response " + response);
-
-                AMQP.BasicProperties replyProps = new AMQP.BasicProperties.Builder().correlationId(delivery.getProperties().getCorrelationId()).build();
-                rabbitmq.basicPublish("", delivery.getProperties().getReplyTo(), replyProps, response.toBytes());
-                rabbitmq.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-            });
-            rabbitmq.basicConsume(channel + "/insert", false, insertCallback, (consumerTag -> {
-            }));
-
-
-            DeliverCallback extractCallback = ((consumerTag, delivery) -> {
-                var response = new ExtractResponse(delivery.getProperties().getCorrelationId(), false, 0);
-                try {
-                    var request = new ExtractRequest(delivery.getBody());
-//                    LOGGER.info("Incomming request " + request);
-                    var pair = new ExtractPair(request);
-                    var callback = pair.getResponseFuture();
-                    extractQueue.add(pair);
-                    response = callback.get();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-//                LOGGER.info("Outgoin response " + response);
-
-                AMQP.BasicProperties replyProps = new AMQP.BasicProperties.Builder().correlationId(delivery.getProperties().getCorrelationId()).build();
-                rabbitmq.basicPublish("", delivery.getProperties().getReplyTo(), replyProps, response.toBytes());
-                rabbitmq.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-            });
-            rabbitmq.basicConsume(channel + "/extract", false, extractCallback, (consumerTag -> {
-            }));
-
-
-            DeliverCallback availableStacksCallback = ((consumerTag, delivery) -> {
-                var response = new AvailableStacksResponse(delivery.getProperties().getCorrelationId(), false);
-                try {
-                    var request = new AvailableStacksRequest(delivery.getBody());
-//                    LOGGER.info("Incomming request " + request);
-                    var pair = new AvailableStacksPair(request);
-                    var callback = pair.getResponseFuture();
-                    availableStacksQueue.add(pair);
-                    response = callback.get();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-//                LOGGER.info("Outgoin response " + response);
-
-                AMQP.BasicProperties replyProps = new AMQP.BasicProperties.Builder().correlationId(delivery.getProperties().getCorrelationId()).build();
-                rabbitmq.basicPublish("", delivery.getProperties().getReplyTo(), replyProps, response.toBytes());
-                rabbitmq.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-            });
-            rabbitmq.basicConsume(channel + "/getAvailableStacks", false, availableStacksCallback, (consumerTag -> {}));
-
-
-            DeliverCallback descriptionCallback = ((consumerTag, delivery) -> {
-                var response = new DescriptionResponse(delivery.getProperties().getCorrelationId(), false, "");
-                try {
-                    var request = new DescriptionRequest(delivery.getBody());
-//                    LOGGER.info("Incomming request " + request);
-                    var pair = new DescriptionPair(request);
-                    var callback = pair.getResponseFuture();
-                    descriptionQueue.add(pair);
-                    response = callback.get();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-//                LOGGER.info("Outgoin response " + response);
-
-                AMQP.BasicProperties replyProps = new AMQP.BasicProperties.Builder().correlationId(delivery.getProperties().getCorrelationId()).build();
-                rabbitmq.basicPublish("", delivery.getProperties().getReplyTo(), replyProps, response.toBytes());
-                rabbitmq.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-            });
-            rabbitmq.basicConsume(channel + "/getDescription", false, descriptionCallback, (consumerTag -> {}));
-
-
-            DeliverCallback preferredStorageCallback = ((consumerTag, delivery) -> {
-                var response = new PreferredStorageResponse(delivery.getProperties().getCorrelationId(), false, false);
-                try {
-                    var request = new PreferredStorageRequest(delivery.getBody());
-//                    LOGGER.info("Incomming request " + request);
-                    var pair = new PreferredStoragePair(request);
-                    var callback = pair.getResponseFuture();
-                    preferredStorageQueue.add(pair);
-                    response = callback.get();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-//                LOGGER.info("Outgoin response " + response);
-
-                AMQP.BasicProperties replyProps = new AMQP.BasicProperties.Builder().correlationId(delivery.getProperties().getCorrelationId()).build();
-                rabbitmq.basicPublish("", delivery.getProperties().getReplyTo(), replyProps, response.toBytes());
-                rabbitmq.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-            });
-            rabbitmq.basicConsume(channel + "/isPreferredStorageFor", false, preferredStorageCallback, (consumerTag -> {}));
-
-        } catch (Exception e) {
-            LOGGER.warn("Failed to declare rabbit mq queue for " + channel);
-            e.printStackTrace();
-        }
     }
 
     private void updateRedis() {
@@ -196,6 +82,39 @@ public class VirtualDiskHost {
         this.redis.hdel(VirtualDiskInfo.REDIS_PATH, channel);
     }
 
+    private void initWebsocket() {
+        try {
+
+            var converter = new WebsocketConverter<>(InsertRequest.class) {
+                @Override
+                public InsertRequest fromBytes(byte[] bytes) throws Exception {
+                    return new InsertRequest(bytes);
+                }
+
+                @Override
+                public byte[] toBytes(InsertRequest obj) {
+                    return obj.toBytes();
+                }
+            };
+            WebsocketConverter.registerConverter(converter);
+
+            DedicatedAppliedEnegistics.WEBSOCKET_HOST.registerListener(new WebsocketListener<InsertRequest>(channel, InsertRequest.class) {
+                @Override
+                public void receive(InsertRequest object) {
+                    LOGGER.error("RECEIVED " + object);
+                }
+            });
+
+            var request = new InsertRequest(AEItemKey.of(AEItems.CERTUS_QUARTZ_HOE.asItem()),0, Actionable.SIMULATE);
+            LOGGER.error("SEND " + request);
+            DedicatedAppliedEnegistics.WEBSOCKET_CLIENT_MANAGER.getClient(info.getHostIp(), info.getHostPort()).sendPaket(channel, request);
+
+        } catch (Exception e) {
+            LOGGER.error("Failed to init websocket");
+            e.printStackTrace();
+        }
+
+    }
 
     public void onTick() {
 //        LOGGER.info("Ticking");
