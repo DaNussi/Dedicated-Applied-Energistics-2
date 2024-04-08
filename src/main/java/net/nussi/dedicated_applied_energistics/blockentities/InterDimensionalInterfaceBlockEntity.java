@@ -3,8 +3,6 @@ package net.nussi.dedicated_applied_energistics.blockentities;
 import appeng.api.networking.GridFlags;
 import appeng.api.networking.IGridNodeListener;
 import appeng.api.networking.crafting.ICraftingProvider;
-import appeng.api.networking.energy.IEnergyService;
-import appeng.api.networking.energy.IEnergySource;
 import appeng.api.networking.ticking.IGridTickable;
 import appeng.api.orientation.BlockOrientation;
 import appeng.api.stacks.AEItemKey;
@@ -12,9 +10,6 @@ import appeng.api.storage.IStorageProvider;
 import appeng.api.util.AECableType;
 import appeng.blockentity.grid.AENetworkBlockEntity;
 import com.mojang.logging.LogUtils;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
@@ -34,9 +29,10 @@ import redis.clients.jedis.JedisPool;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.UUID;
 
 import static net.nussi.dedicated_applied_energistics.DedicatedAppliedEnegistics.MODID;
-import static net.nussi.dedicated_applied_energistics.DedicatedAppliedEnergisticsController.*;
+import static net.nussi.dedicated_applied_energistics.DedicatedAppliedEnergisticsController.CONFIG_VALUE_REDIS_URI;
 
 @Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class InterDimensionalInterfaceBlockEntity extends AENetworkBlockEntity {
@@ -51,7 +47,7 @@ public class InterDimensionalInterfaceBlockEntity extends AENetworkBlockEntity {
         super(BlockEntityTypeInit.INTER_DIMENSIONAL_INTERFACE_ENTITY_TYPE.get(), pos, state);
 
 
-        this.uuid = CONFIG_VALUE_HOST_ID.get() + "_" + this.getBlockPos().getX()  + "_" + this.getBlockPos().getY()  + "_" + this.getBlockPos().getZ();
+        this.uuid = UUID.randomUUID().toString();
 
         getMainNode()
                 .setFlags(GridFlags.REQUIRE_CHANNEL)
@@ -71,10 +67,6 @@ public class InterDimensionalInterfaceBlockEntity extends AENetworkBlockEntity {
 
     public String getUuid() {
         return uuid;
-    }
-
-    public Channel getRabbitmq() {
-        return rabbitmq_channel;
     }
 
     public Jedis getRedis() {
@@ -127,29 +119,10 @@ public class InterDimensionalInterfaceBlockEntity extends AENetworkBlockEntity {
     }
 
     // Connect Database
-    private Connection rabbit_connection;
-    private Channel rabbitmq_channel;
     private JedisPool redis_pool;
     private Jedis redis_connection;
 
     private boolean connectDatabase() {
-
-        for (int i = 0; i <= 5; i++) {
-            try {
-                LOGGER.debug(uuid + " | Connecting to " + CONFIG_VALUE_RABBITMQ_URI.get());
-                ConnectionFactory factory = new ConnectionFactory();
-                factory.setUri(CONFIG_VALUE_RABBITMQ_URI.get());
-
-
-                this.rabbit_connection = factory.newConnection();
-                this.rabbitmq_channel = rabbit_connection.createChannel();
-                break;
-            } catch (Exception e) {
-                LOGGER.error(uuid + " | Failed to start rabbit mq connection! Retry " + i + "/5... ");
-//                e.printStackTrace();
-                if(i == 5) return false;
-            }
-        }
 
         for (int i = 0; i <= 5; i++) {
             try {
@@ -166,24 +139,6 @@ public class InterDimensionalInterfaceBlockEntity extends AENetworkBlockEntity {
     }
 
     private void disconnectDatabase() {
-
-        if(this.rabbitmq_channel != null && this.rabbitmq_channel.isOpen()) {
-            try {
-                this.rabbitmq_channel.close();
-            } catch (Exception e) {
-                LOGGER.error(uuid + " | Failed to close rabbit mq channel");
-                e.printStackTrace();
-            }
-        }
-
-        if(this.rabbit_connection != null && this.rabbit_connection.isOpen()) {
-            try {
-                this.rabbit_connection.close();
-            } catch (Exception e) {
-                LOGGER.error(uuid + " | Failed to close rabbit mq connection");
-                e.printStackTrace();
-            }
-        }
 
         if(this.redis_connection != null && this.redis_connection.isConnected()) {
             try {

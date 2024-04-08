@@ -5,46 +5,31 @@ import net.minecraft.nbt.TagParser;
 
 import java.nio.charset.StandardCharsets;
 
-import static net.nussi.dedicated_applied_energistics.DedicatedAppliedEnergisticsController.CONFIG_VALUE_HOST_IP;
-import static net.nussi.dedicated_applied_energistics.DedicatedAppliedEnergisticsController.CONFIG_VALUE_HOST_PORT;
-
 public class VirtualDiskInfo {
     public static final String REDIS_PATH = "VirtualDisks";
 
     private String origin;
-    private int priority;
-    private String host_ip;
-    private int host_port;
 
-    public VirtualDiskInfo(String origin,int priority) {
-        this.origin = origin;
-        this.priority = priority;
-        this.host_ip = CONFIG_VALUE_HOST_IP.get();
-        this.host_port = CONFIG_VALUE_HOST_PORT.get();
-    }
+    private String insertMethodID;
+    private String extractMethodID;
+    private String availableStacksMethodID;
+    private String descriptionMethodID;
+    private String preferredStorageMethodID;
 
-    public VirtualDiskInfo(String origin, int priority, String host_ip, int host_port) {
+
+    public VirtualDiskInfo(String origin, String insertMethodID, String extractMethodID, String availableStacksMethodID, String descriptionMethodID, String preferredStorageMethodID) {
         this.origin = origin;
-        this.priority = priority;
-        this.host_ip = host_ip;
-        this.host_port = host_port;
+        this.insertMethodID = insertMethodID;
+        this.extractMethodID = extractMethodID;
+        this.availableStacksMethodID = availableStacksMethodID;
+        this.descriptionMethodID = descriptionMethodID;
+        this.preferredStorageMethodID = preferredStorageMethodID;
     }
 
     public String getOrigin() {
         return origin;
     }
 
-    public int getPriority() {
-        return priority;
-    }
-
-    public String getHostIp() {
-        return host_ip;
-    }
-
-    public int getHostPort() {
-        return host_port;
-    }
 
     public byte[] toBytes() {
         return this.toString().getBytes(StandardCharsets.UTF_8);
@@ -53,10 +38,12 @@ public class VirtualDiskInfo {
     @Override
     public String toString() {
         CompoundTag compoundTag = new CompoundTag();
-        compoundTag.putInt("priority", priority);
         compoundTag.putString("origin", origin);
-        compoundTag.putString("host_ip", host_ip);
-        compoundTag.putInt("host_port", host_port);
+        compoundTag.putString("insertMethodID", insertMethodID);
+        compoundTag.putString("extractMethodID", extractMethodID);
+        compoundTag.putString("availableStacksMethodID", availableStacksMethodID);
+        compoundTag.putString("descriptionMethodID", descriptionMethodID);
+        compoundTag.putString("preferredStorageMethodID", preferredStorageMethodID);
 
         return compoundTag.toString();
     }
@@ -71,9 +58,31 @@ public class VirtualDiskInfo {
 
         return new VirtualDiskInfo(
                 compoundTag.getString("origin"),
-                compoundTag.getInt("priority"),
-                compoundTag.getString("host_ip"),
-                compoundTag.getInt("host_port")
+                compoundTag.getString("insertMethodID"),
+                compoundTag.getString("extractMethodID"),
+                compoundTag.getString("availableStacksMethodID"),
+                compoundTag.getString("descriptionMethodID"),
+                compoundTag.getString("preferredStorageMethodID")
         );
+    }
+
+    public String getInsertMethodID() {
+        return insertMethodID;
+    }
+
+    public String getExtractMethodID() {
+        return extractMethodID;
+    }
+
+    public String getAvailableStacksMethodID() {
+        return availableStacksMethodID;
+    }
+
+    public String getDescriptionMethodID() {
+        return descriptionMethodID;
+    }
+
+    public String getPreferredStorageMethodID() {
+        return preferredStorageMethodID;
     }
 }

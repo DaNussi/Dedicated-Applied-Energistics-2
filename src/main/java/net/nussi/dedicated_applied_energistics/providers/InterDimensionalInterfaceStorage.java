@@ -13,7 +13,6 @@ import appeng.api.storage.IStorageProvider;
 import appeng.api.storage.MEStorage;
 import appeng.core.definitions.AEItems;
 import com.mojang.logging.LogUtils;
-import com.rabbitmq.client.Channel;
 import net.nussi.dedicated_applied_energistics.blockentities.InterDimensionalInterfaceBlockEntity;
 import net.nussi.dedicated_applied_energistics.providers.virtualdisk.VirtualDiskClient;
 import net.nussi.dedicated_applied_energistics.providers.virtualdisk.VirtualDiskHost;
@@ -32,7 +31,6 @@ public class InterDimensionalInterfaceStorage implements IStorageProvider, IGrid
 
     private InterDimensionalInterfaceBlockEntity instance;
     private Jedis redis;
-    private Channel rabbitmq;
 
     private Vector<VirtualDiskHost> diskHosts = new Vector<>();
     private Vector<VirtualDiskClient> diskClients = new Vector<>();
@@ -47,7 +45,6 @@ public class InterDimensionalInterfaceStorage implements IStorageProvider, IGrid
         LOGGER.info(instance.getUuid() + " | Starting storage provider");
 
         this.redis = instance.getRedis();
-        this.rabbitmq = instance.getRabbitmq();
 
         LOGGER.info(instance.getUuid() + " | Started storage provider");
     }
@@ -92,11 +89,6 @@ public class InterDimensionalInterfaceStorage implements IStorageProvider, IGrid
 
         if (redis == null) {
             LOGGER.warn(instance.getUuid() + " | Skipping indexing of grid because redis is null");
-            return;
-        }
-
-        if (rabbitmq == null) {
-            LOGGER.warn(instance.getUuid() + " | Skipping indexing of grid because rabbit mq is null");
             return;
         }
 
@@ -175,7 +167,7 @@ public class InterDimensionalInterfaceStorage implements IStorageProvider, IGrid
         List<VirtualDiskHost> hosts = new ArrayList<>();
 
         for (MEStorage storageCell : storageCells) {
-            hosts.add(new VirtualDiskHost(storageCell, 0, instance));
+            hosts.add(new VirtualDiskHost(storageCell, instance));
         }
 
         // REMOVE HOST IF IT DOSEN'T EXIST ANYMORE

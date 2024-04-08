@@ -2,6 +2,7 @@ package net.nussi.dedicated_applied_energistics.providers.virtualdisk.actions;
 
 import net.minecraft.nbt.CompoundTag;
 
+import java.io.Serializable;
 import java.util.UUID;
 
 public abstract class Request extends Compoundable {

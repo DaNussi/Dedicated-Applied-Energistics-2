@@ -11,9 +11,10 @@ import net.nussi.dedicated_applied_energistics.init.BlockEntityTypeInit;
 import net.nussi.dedicated_applied_energistics.init.BlockInit;
 import net.nussi.dedicated_applied_energistics.init.ItemInit;
 import net.nussi.dedicated_applied_energistics.init.TabInit;
-import net.nussi.dedicated_applied_energistics.websockets.WebsocketClientManager;
-import net.nussi.dedicated_applied_energistics.websockets.WebsocketHost;
+import net.nussi.dedicated_applied_energistics.redsocket.Redsocket;
 import org.slf4j.Logger;
+
+import java.net.URISyntaxException;
 
 @Mod(DedicatedAppliedEnegistics.MODID)
 public class DedicatedAppliedEnegistics
@@ -21,8 +22,7 @@ public class DedicatedAppliedEnegistics
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public static final String MODID = "dae2";
-    public static final WebsocketHost WEBSOCKET_HOST = new WebsocketHost();
-    public static final WebsocketClientManager WEBSOCKET_CLIENT_MANAGER = new WebsocketClientManager();
+    public static Redsocket REDSOCKET;
 
     public DedicatedAppliedEnegistics()
     {
@@ -40,14 +40,12 @@ public class DedicatedAppliedEnegistics
 
     public static void commonSetup(FMLCommonSetupEvent event) {
 
-        if(DedicatedAppliedEnergisticsController.CONFIG_VALUE_BEHAVIOUR_HOST_IP_AUTO_DETECT.get())  {
-            String ip = DedicatedAppliedEnergisticsController.getHostAddress();
-            LOGGER.info("BEHAVIOUR_HOST_IP_AUTO_DETECT is enabled and detected ip: " + ip);
-            DedicatedAppliedEnergisticsController.CONFIG_VALUE_HOST_IP.set(ip);
+        try {
+            REDSOCKET = new Redsocket("dae2", DedicatedAppliedEnergisticsController.CONFIG_VALUE_REDIS_URI.get());
+        } catch (URISyntaxException e) {
+            LOGGER.error("Failed to start redsocket");
+            e.printStackTrace();
         }
-
-        WEBSOCKET_HOST.start();
-        WEBSOCKET_CLIENT_MANAGER.start();
     }
 
 }

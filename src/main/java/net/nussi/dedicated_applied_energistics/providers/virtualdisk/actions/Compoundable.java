@@ -3,9 +3,10 @@ package net.nussi.dedicated_applied_energistics.providers.virtualdisk.actions;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
 
+import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 
-public abstract class Compoundable {
+public abstract class Compoundable implements Serializable {
 
     public Compoundable() {
     }

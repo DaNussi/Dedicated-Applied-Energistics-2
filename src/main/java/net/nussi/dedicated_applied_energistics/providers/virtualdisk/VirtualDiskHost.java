@@ -1,15 +1,8 @@
 package net.nussi.dedicated_applied_energistics.providers.virtualdisk;
 
-import appeng.api.config.Actionable;
 import appeng.api.networking.security.IActionSource;
-import appeng.api.stacks.AEItemKey;
 import appeng.api.storage.MEStorage;
-import appeng.core.definitions.AEItems;
 import com.mojang.logging.LogUtils;
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.DeliverCallback;
-import net.nussi.dedicated_applied_energistics.DedicatedAppliedEnegistics;
 import net.nussi.dedicated_applied_energistics.blockentities.InterDimensionalInterfaceBlockEntity;
 import net.nussi.dedicated_applied_energistics.misc.RedisHelper;
 import net.nussi.dedicated_applied_energistics.providers.virtualdisk.actions.availablestacks.AvailableStacksPair;
@@ -27,13 +20,16 @@ import net.nussi.dedicated_applied_energistics.providers.virtualdisk.actions.ins
 import net.nussi.dedicated_applied_energistics.providers.virtualdisk.actions.preferredstorage.PreferredStoragePair;
 import net.nussi.dedicated_applied_energistics.providers.virtualdisk.actions.preferredstorage.PreferredStorageRequest;
 import net.nussi.dedicated_applied_energistics.providers.virtualdisk.actions.preferredstorage.PreferredStorageResponse;
-import net.nussi.dedicated_applied_energistics.websockets.WebsocketConverter;
-import net.nussi.dedicated_applied_energistics.websockets.WebsocketListener;
-import net.nussi.dedicated_applied_energistics.websockets.WebsocketPaket;
+import net.nussi.dedicated_applied_energistics.redsocket.RedsocketFunction;
 import org.slf4j.Logger;
 import redis.clients.jedis.Jedis;
 
-import java.util.*;
+import java.nio.charset.StandardCharsets;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
+
+import static net.nussi.dedicated_applied_energistics.DedicatedAppliedEnegistics.REDSOCKET;
 
 public class VirtualDiskHost {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -53,9 +49,16 @@ public class VirtualDiskHost {
     private final Queue<DescriptionPair> descriptionQueue = new LinkedList<>();
     private final Queue<PreferredStoragePair> preferredStorageQueue = new LinkedList<>();
 
-    public VirtualDiskHost(MEStorage storage, int priority, InterDimensionalInterfaceBlockEntity instance) {
+    public VirtualDiskHost(MEStorage storage, InterDimensionalInterfaceBlockEntity instance) {
         this.storage = storage;
-        this.info = new VirtualDiskInfo(instance.getUuid(), priority);
+        this.info = new VirtualDiskInfo(
+                instance.getUuid(),
+                instance.getUuid()+"/insert",
+                instance.getUuid()+"/extract",
+                instance.getUuid()+"/availableStacks",
+                instance.getUuid()+"/description",
+                instance.getUuid()+"/preferredStorage"
+                );
         this.instance = instance;
         this.channel = RedisHelper.getPath(storage, instance);
     }
@@ -64,7 +67,7 @@ public class VirtualDiskHost {
         this.redis = instance.getRedis();
 
         this.updateRedis();
-        this.initWebsocket();
+        this.initRedsocket();
 
         LOGGER.warn("Started virtual drive host " + channel);
     }
@@ -82,32 +85,67 @@ public class VirtualDiskHost {
         this.redis.hdel(VirtualDiskInfo.REDIS_PATH, channel);
     }
 
-    private void initWebsocket() {
+    private void initRedsocket() {
         try {
 
-            var converter = new WebsocketConverter<>(InsertRequest.class) {
+            REDSOCKET.registerFunction(this.info.getInsertMethodID(), new RedsocketFunction<String, String>() {
                 @Override
-                public InsertRequest fromBytes(byte[] bytes) throws Exception {
-                    return new InsertRequest(bytes);
-                }
-
-                @Override
-                public byte[] toBytes(InsertRequest obj) {
-                    return obj.toBytes();
-                }
-            };
-            WebsocketConverter.registerConverter(converter);
-
-            DedicatedAppliedEnegistics.WEBSOCKET_HOST.registerListener(new WebsocketListener<InsertRequest>(channel, InsertRequest.class) {
-                @Override
-                public void receive(InsertRequest object) {
-                    LOGGER.error("RECEIVED " + object);
+                protected String call(String requestText) throws Exception {
+                    InsertRequest request = new InsertRequest(requestText.getBytes(StandardCharsets.UTF_8));
+                    CompletableFuture<InsertResponse> responseFuture = new CompletableFuture<>();
+                    InsertPair pair = new InsertPair(request, responseFuture);
+                    insertQueue.add(pair);
+                    return new String(responseFuture.get().toBytes(), StandardCharsets.UTF_8);
                 }
             });
 
-            var request = new InsertRequest(AEItemKey.of(AEItems.CERTUS_QUARTZ_HOE.asItem()),0, Actionable.SIMULATE);
-            LOGGER.error("SEND " + request);
-            DedicatedAppliedEnegistics.WEBSOCKET_CLIENT_MANAGER.getClient(info.getHostIp(), info.getHostPort()).sendPaket(channel, request);
+            REDSOCKET.registerFunction(this.info.getExtractMethodID(), new RedsocketFunction<String, String>() {
+                @Override
+                protected String call(String requestText) throws Exception {
+                    ExtractRequest request = new ExtractRequest(requestText.getBytes(StandardCharsets.UTF_8));
+                    CompletableFuture<ExtractResponse> responseFuture = new CompletableFuture<>();
+                    ExtractPair pair = new ExtractPair(request, responseFuture);
+                    extractQueue.add(pair);
+                    return new String(responseFuture.get().toBytes(), StandardCharsets.UTF_8);
+                }
+            });
+
+
+            REDSOCKET.registerFunction(this.info.getAvailableStacksMethodID(), new RedsocketFunction<String, String>() {
+                @Override
+                protected String call(String requestText) throws Exception {
+                    AvailableStacksRequest request = new AvailableStacksRequest(requestText.getBytes(StandardCharsets.UTF_8));
+                    CompletableFuture<AvailableStacksResponse> responseFuture = new CompletableFuture<>();
+                    AvailableStacksPair pair = new AvailableStacksPair(request, responseFuture);
+                    availableStacksQueue.add(pair);
+                    return new String(responseFuture.get().toBytes(), StandardCharsets.UTF_8);
+                }
+            });
+
+
+            REDSOCKET.registerFunction(this.info.getDescriptionMethodID(), new RedsocketFunction<String, String>() {
+                @Override
+                protected String call(String requestText) throws Exception {
+                    DescriptionRequest request = new DescriptionRequest(requestText.getBytes(StandardCharsets.UTF_8));
+                    CompletableFuture<DescriptionResponse> responseFuture = new CompletableFuture<>();
+                    DescriptionPair pair = new DescriptionPair(request, responseFuture);
+                    descriptionQueue.add(pair);
+                    return new String(responseFuture.get().toBytes(), StandardCharsets.UTF_8);
+                }
+            });
+
+
+            REDSOCKET.registerFunction(this.info.getPreferredStorageMethodID(), new RedsocketFunction<String, String>() {
+                @Override
+                protected String call(String requestText) throws Exception {
+                    PreferredStorageRequest request = new PreferredStorageRequest(requestText.getBytes(StandardCharsets.UTF_8));
+                    CompletableFuture<PreferredStorageResponse> responseFuture = new CompletableFuture<>();
+                    PreferredStoragePair pair = new PreferredStoragePair(request, responseFuture);
+                    preferredStorageQueue.add(pair);
+                    return new String(responseFuture.get().toBytes(), StandardCharsets.UTF_8);
+                }
+            });
+
 
         } catch (Exception e) {
             LOGGER.error("Failed to init websocket");

@@ -17,38 +17,19 @@ public class DedicatedAppliedEnergisticsController {
     public static ForgeConfigSpec.Builder CONFIG_BUILDER = new ForgeConfigSpec.Builder();
     public static ForgeConfigSpec CONFIG_SPEC;
 
-    public static ForgeConfigSpec.ConfigValue<String> CONFIG_VALUE_RABBITMQ_URI;
     public static ForgeConfigSpec.ConfigValue<String> CONFIG_VALUE_REDIS_URI;
-    public static ForgeConfigSpec.ConfigValue<String> CONFIG_VALUE_HOST_ID;
-    public static ForgeConfigSpec.ConfigValue<String> CONFIG_VALUE_HOST_IP;
-    public static ForgeConfigSpec.ConfigValue<Integer> CONFIG_VALUE_HOST_PORT;
 
     public static ForgeConfigSpec.ConfigValue<Boolean> CONFIG_VALUE_BEHAVIOUR_AUTOSTART;
-    public static ForgeConfigSpec.ConfigValue<Boolean> CONFIG_VALUE_BEHAVIOUR_HOST_IP_AUTO_DETECT;
 
     static {
         CONFIG_BUILDER.push("Config for DAE2!");
 
-        CONFIG_VALUE_RABBITMQ_URI = CONFIG_BUILDER.define("RABBITMQ_URI", "amqp://guest:guest@localhost:5672/");
         CONFIG_VALUE_REDIS_URI = CONFIG_BUILDER.define("REDIS_URI", "redis://localhost:6379/");
-        CONFIG_VALUE_HOST_ID = CONFIG_BUILDER.define("HOST_ID", UUID.randomUUID().toString());
-        CONFIG_VALUE_HOST_IP = CONFIG_BUILDER.define("HOST_IP", getHostAddress());
-        CONFIG_VALUE_HOST_PORT = CONFIG_BUILDER.define("HOST_PORT", 7894);
 
         CONFIG_VALUE_BEHAVIOUR_AUTOSTART = CONFIG_BUILDER.define("BEHAVIOUR_AUTOSTART", false);
-        CONFIG_VALUE_BEHAVIOUR_HOST_IP_AUTO_DETECT = CONFIG_BUILDER.define("BEHAVIOUR_HOST_IP_AUTO_DETECT", true);
 
         CONFIG_BUILDER.pop();
         CONFIG_SPEC = CONFIG_BUILDER.build();
-    }
-
-    public static String getHostAddress() {
-        try {
-            return InetAddress.getLocalHost().getHostAddress();
-        } catch (Exception e) {
-            LOGGER.error("Failed to get host ip using 127.0.0.1");
-            return "127.0.0.1";
-        }
     }
 
     @SubscribeEvent
